@@ -42,23 +42,23 @@ numbers as current.
 
 | Question shape | Reference file | Size (zh / en chars) |
 |---|---|---|
-| Architecture, module map, what the repo does/doesn't contain, update history | `01-architecture` | 8k / 14k |
-| Weights, scoring formula, mutual-follow boost, author decay, OON discount, cold start | `02-scoring-ranking` | 10k / 14k |
-| Retrieval quotas, which posts get filtered out, thread dedup, why a reply gets no reach | `03-retrieval-filtering` | 8k / 13k |
-| ALLOW/NOTICE/INTERSTITIAL/DROP rules, legal takedowns, age gating | `04-visibility-filtering` | **50k / 63k** |
-| What triggers a safety label, botmaker rules, enforcement tiers, appeals | `05-safety-labeling` | **50k / 69k** |
-| Account credibility, PageRank, block/report ratios, inauthentic behavior, NSFW scoring | `06-account-credibility` | **39k / 56k** |
-| Phoenix model architecture, two-tower retrieval, loss functions, DPP reranking | `07-models` | **37k / 49k** |
-| Actionable growth tactics, myth-busting, shadowban self-diagnosis | `08-playbook` | 13k / 24k |
+| Architecture, module map, what the repo does/doesn't contain, update history | `01-architecture` | 7852 / 13947 |
+| Weights, scoring formula, mutual-follow boost, author decay, OON discount, cold start | `02-scoring-ranking` | 9872 / 13989 |
+| Retrieval quotas, which posts get filtered out, thread dedup, why a reply gets no reach | `03-retrieval-filtering` | 7829 / 12969 |
+| ALLOW/NOTICE/INTERSTITIAL/DROP rules, legal takedowns, age gating | `04-visibility-filtering` | **50198 / 63125** |
+| What triggers a safety label, botmaker rules, enforcement tiers, appeals | `05-safety-labeling` | **49729 / 69237** |
+| Account credibility, PageRank, block/report ratios, inauthentic behavior, NSFW scoring | `06-account-credibility` | **39244 / 55652** |
+| Phoenix model architecture, two-tower retrieval, loss functions, DPP reranking | `07-models` | **37494 / 49171** |
+| Actionable growth tactics, myth-busting, shadowban self-diagnosis | `08-playbook` | 12872 / 24046 |
 
 Files live at `references/{zh,en}/<name>.md`. Read the file before answering; if a
 listed file is absent, say that topic is not yet covered rather than improvising.
 
 ### Reading strategy for the four large docs
 
-`04`–`07` are exhaustive rule/model enumerations. Loading one whole costs roughly
-30–40k tokens in Chinese or 13–18k in English. **Do not read them whole for a narrow
-question.** Instead:
+`04`–`07` are exhaustive rule/model enumerations, 37,494–50,198 characters in Chinese
+and 49,171–69,237 in English (`wc -m` reproduces these). **Do not read them whole for a
+narrow question.** Instead:
 
 1. For a specific rule, label, param or model component, **grep the file first** for
    its identifier (rule names, `SafetyLabelType` variants, param names and
