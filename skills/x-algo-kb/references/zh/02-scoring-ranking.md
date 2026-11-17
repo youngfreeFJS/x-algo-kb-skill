@@ -253,7 +253,7 @@ home-mixer 在请求里强制置 `compute_value_model: true`（`home-mixer/score
 
 **所以三个乘法调整实际发生在 vm-ranker，不在 home-mixer。** 只看 home-mixer 会误判为「没有作者降权」。
 
-另一个坑：`vm-ranker/params.rs` 顶部**没有** sync 注释，其 `FavoriteWeight` 默认写 0.5，而 home-mixer 已同步为 0.708。两者读的是**同一个 feature switch key** `rust_home_mixer_favorite_weight`，生产取同一个值；repo 里的默认值差异只是 vm-ranker 那份没被 cron 同步。**以 home-mixer/params/param.rs 为准。**
+另一个坑：`vm-ranker/params.rs` 顶部**没有** sync 注释，其 `FavoriteWeight` 默认写 0.5，而 home-mixer 已同步为 0.708。两者读的是**同一个 feature switch key** `rust_home_mixer_favorite_weight`，生产取同一个值；repo 里的默认值差异只是 vm-ranker 那份没被 cron 同步。**以 `home-mixer/params/param.rs` 为准。**
 
 ---
 
