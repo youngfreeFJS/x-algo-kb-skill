@@ -49,15 +49,7 @@ score = clamp(165.2 + 7.07 · ln(mass), 0, 100)      # mass <= 0 时 score = 0
 
 ### 2.3 teleport 种子集：一半是认证账号，没有人工白名单
 
-`UserCredV2App.scala:141-193` `computeTeleportWeights`：
-
-```
-teleport   = (1 − beta) · uniform + beta · engagement        # beta 默认 0.5
-uniform    = 在 !isNearZero && isPremium 的账号上均匀分布
-engagement = 每个互动者归一化 engagerMass.mass × count / totalCount，按目标求和后全局归一化
-```
-
-`beta` 默认 **0.5** 且强制 ∈[0,1]（`UserCredV2Config.scala:35`、`:36-38`）。`isPremium` 定义（`user-cred-v2/ValidUserInfo.scala`）：
+`UserCredV2App.scala:141-193` `computeTeleportWeights`：`teleport = (1 − beta) · uniform + beta · engagement`，其中 `uniform` 在 `!isNearZero && isPremium` 的账号上均匀分布，`engagement` 把每个互动者归一化的 `engagerMass.mass × count / totalCount` 按目标求和后全局归一化。`beta` 默认 **0.5** 且强制 ∈[0,1]（`UserCredV2Config.scala:35`、`:36-38`）。`isPremium` 定义（`user-cred-v2/ValidUserInfo.scala`）：
 
 ```
 isPremium = isBlueVerified || isGrayVerified || isGoldVerified || isVerifiedOrg || isVOAffiliate
@@ -67,10 +59,8 @@ isPremium = isBlueVerified || isGrayVerified || isGoldVerified || isVerifiedOrg 
 
 ### 2.4 受限账号是吸收态
 
-| 状态 | 在图里的处理 |
-|---|---|
-| `restricted` / `deactivated` / `suspended` / `erased` | `ValidUserInfo.fromFlatUser` 返回 `None` → **整体不进图**，既非节点也不传播（`user-cred-v2/ValidUserInfo.scala`） |
-| `userState == 1`（`NearZeroState`，near-zero） | 仍是节点，但只进 `allUserPipe` 不进 `activeUserPipe` → **可以接收 mass，永不向外传播**（`UserCredV2App.scala:287-318`） |
+- `restricted` / `deactivated` / `suspended` / `erased`：`ValidUserInfo.fromFlatUser` 返回 `None` → **整体不进图**，既非节点也不传播（`user-cred-v2/ValidUserInfo.scala`）。
+- `userState == 1`（`NearZeroState`，near-zero）：仍是节点，但只进 `allUserPipe` 不进 `activeUserPipe` → **可以接收 mass，永不向外传播**（`UserCredV2App.scala:287-318`）。
 
 **near-zero 账号是质量黑洞：它给别人的点赞不再传递任何权重。** 找一堆被限流的号互赞在图上完全无效。
 
@@ -90,9 +80,8 @@ isPremium = isBlueVerified || isGrayVerified || isGoldVerified || isVerifiedOrg 
 | `gate_row_delta` / `gate_vit_delta` | 0.05 / 0.05 | 行数 / VIT 数相对波动上限 |
 | `gate_mass_min` / `gate_mass_max` | **0.99 / 1.005** | 总质量守恒区间 |
 
-迭代式（`UserCredV2App.scala:320-390`）：`distributed(u) = mass(u)/outDegree(u)`；`missingMass = 1 − Σdistributed`（dangling）；`jumpMass(v) = p(v)·alpha + p(v)·missingMass·(1−alpha)`；`mass_new(v) = normalMass(v)·(1−alpha) + jumpMass(v)`；`diff = Σ|mass_new − mass_old|`（L1）。
+迭代式（`UserCredV2App.scala:320-390`）：`distributed(u) = mass(u)/outDegree(u)`；`missingMass = 1 − Σdistributed`（dangling）；`jumpMass(v) = p(v)·alpha + p(v)·missingMass·(1−alpha)`；`mass_new(v) = normalMass(v)·(1−alpha) + jumpMass(v)`；`diff = Σ|mass_new − mass_old|`（L1）。循环条件 `diff > 0.001 && curIteration + 1 < 50`（`:246-270`），每轮后按 `mass / Σmass` 归一化（`:272-285`），初值每个有效用户 1.0（`UserMass.scala:11-13`）。
 
-- 循环条件 `diff > 0.001 && curIteration + 1 < 50`（`:246-270`），每轮后按 `mass / Σmass` 归一化（`:272-285`），初值每个有效用户 1.0（`UserMass.scala:11-13`）。
 - **热启动优先用上一版快照的 mass**（`:120-139`）：这是每天增量迭代的链，不是每天从零重算——**掉权重和恢复都不会一夜发生。**
 - 每日调度（`:518-534`），产出 HDFS `UserCredV2ScalaDataset` + Manhattan `UserCredV2ManhattanScalaDataset`，写 `UserCredV2Scores{score, mass, snapshotTimestampMsec}`（`:453-506`）。
 - **快照隔离闸门**（`user-cred-v2/SnapshotSafeguard.scala:21-89`）：`GateMetrics(rows, massSum, vitCount = score ≥ 55 人数, gte90Count = score ≥ 90 人数)`，三检查 `G1_row_count` / `G2_mass_sum` / `G3_vit_count`。任一超限则整个快照**进隔离区不发布**、线上继续用旧分数（`UserCredV2App.scala:392-430`，除非显式 `skip_gate`）。
@@ -153,9 +142,7 @@ AgathaSpamSuspended > 0.99 || AgathaAllSpamReportsPerFav > 0.999 || AgathaSpamRe
 → SetRemediationFatigueLabel(6 天)                             # :34
 ```
 
-`botmaker-rules/scarecrow/bot/AgathaSpamProduction__ApplySearchTopTweetLabel.bot:8-27`（bot 20998）：`AgathaAllSpamReportsPerFav > 0.9975 || AgathaSpamSuspended > 0.98`，同样要求 `!IsHighPageRankUser && !IsUserGrayVerified && !SkipList` → `SetTweetRtfApplyLabelWithExpirationMs("AGATHA_SPAM", TTL = 1 周)`。
-
-分数入口 `scarecrow/legacy/StratoRegistry.scala:137-167` `GetUserHealthScores(userId, models)` → HSS。**0.99 / 0.999 / 0.9975 / 0.98 是 agatha 分在仓库里唯一可见的生产判定阈值。**
+`botmaker-rules/scarecrow/bot/AgathaSpamProduction__ApplySearchTopTweetLabel.bot:8-27`（bot 20998）：`AgathaAllSpamReportsPerFav > 0.9975 || AgathaSpamSuspended > 0.98`，同样要求 `!IsHighPageRankUser && !IsUserGrayVerified && !SkipList` → `SetTweetRtfApplyLabelWithExpirationMs("AGATHA_SPAM", TTL = 1 周)`。分数入口 `scarecrow/legacy/StratoRegistry.scala:137-167` `GetUserHealthScores(userId, models)` → HSS。**0.99 / 0.999 / 0.9975 / 0.98 是 agatha 分在仓库里唯一可见的生产判定阈值。**
 
 账号侧静态特征见 `agatha/scalding/data/loaders/CombinedUserDataLoader.scala:31-190`（窗口 **Days(21)**、9 个 loader，`agatha/scalding/data/ActiveUserFeaturesJob.scala:19-42`）：`email_state`、`create_week/month/year`、`created_via`、`creation_ip(/16)(/24)`、`follower_count_log / following_count_log / active_follower_count_log`（均 `ceil(ln(1+v))`）、`signup_country/region`、`push_device/push_client`、`profile_token`、`signup_category`、`is_verified`；排除 restricted / frictionless / deactivated。图特征源枚举 `agatha/hub/agatha/thrift/featureSource.thrift:3-29`（FollowGraph、FavGraph、BlockGraph、MuteGraph、AbuseReportGraph、LegitTattleGraph、NonLegitTattleNoBlocksGraph、DirectMessageGraph、CombinedUser 等）。
 
@@ -165,9 +152,7 @@ AgathaSpamSuspended > 0.99 || AgathaAllSpamReportsPerFav > 0.999 || AgathaSpamRe
 
 ### 5.1 维度与输入
 
-`bdsm/README.md:102-103`：**256 种 action type / 8 个分类头 / 序列长度 512 / embedding 宽度 1024**（`bdsm/runtime/manhattan_arrow_adapter.py:22-25,36` 一致，dwell 裁剪到 300000 ms）。Rust 提取器输出 48 个 `action_seq` key（`bdsm/rust/abuse-v3-features/src/lib.rs:548-616`）：`action_types`（256 维 multi-hot）+ `continuous_actions`（time_delta、dwell_norm）+ 31 个离散上下文（`:571-601`，含 `product_surface`、`client_app_id`、`had_prior_render`、`device_battery`、`device_network`、`ip_hash`、`tweet_feed_position`、`is_promoted_tweet`、`country_code`、`timezone` 等）+ 6 个派生行为特征（`:602-607`）+ 3 个归类特征（`:608-610`）+ 6 个序列级统计（`:611-616`）。
-
-模型（`bdsm/runtime/model.py:11-33,62-80,239-326`）：**时间感知 RoPE**（旋转位置编码由 action 时间戳驱动而非序号，所以"机械节奏"是原生输入）+ GQA + RMSNorm + SwiGLU + CLS 池化 + 128 维对比头；头是 3 层 MLP + GELU（`bdsm/runtime/task_heads.py:14-46`），backbone 服务时冻结。
+`bdsm/README.md:102-103`：**256 种 action type / 8 个分类头 / 序列长度 512 / embedding 宽度 1024**（`bdsm/runtime/manhattan_arrow_adapter.py:22-25,36` 一致，dwell 裁剪到 300000 ms）。Rust 提取器输出 48 个 `action_seq` key（`bdsm/rust/abuse-v3-features/src/lib.rs:548-616`）：`action_types`（256 维 multi-hot）+ `continuous_actions`（time_delta、dwell_norm）+ 31 个离散上下文（`:571-601`，含 `product_surface`、`client_app_id`、`had_prior_render`、`device_battery`、`device_network`、`ip_hash`、`tweet_feed_position`、`is_promoted_tweet`、`country_code`、`timezone` 等）+ 6 个派生行为特征（`:602-607`）+ 3 个归类特征（`:608-610`）+ 6 个序列级统计（`:611-616`）。模型（`bdsm/runtime/model.py:11-33,62-80,239-326`）用**时间感知 RoPE**（旋转位置编码由 action 时间戳驱动而非序号，所以"机械节奏"是原生输入）+ GQA + RMSNorm + SwiGLU + CLS 池化 + 128 维对比头；头是 3 层 MLP + GELU（`bdsm/runtime/task_heads.py:14-46`），backbone 服务时冻结。
 
 ### 5.2 派生特征：机器味的量化定义
 
@@ -227,16 +212,7 @@ target_tweet_repetition = max(单条推文被操作次数) / n
 | **cusp 带** | `bot >= tau − delta && legit <= lambda + delta` | **不封号，改挑战**（arkose / captcha / liveness） | `:981-995,187-205` |
 | 动作数不足 | `total_actions < min_actions_for_enforcement` | 只打 `enforcement_gated_low_actions` | `:972-976` |
 
-官方客户端 id 是**真实值**：`official_client_app_ids: [3033300, 129032, 258901, 191841]`（`bdsm/runtime/sink_policy.yaml:38`）。**所有操作点都是哨兵，不是生产值**（`sink_policy.yaml:15-40`）：
-
-```
-min_actions_for_enforcement: 999999        # 不可能的计数
-thresholds:      FollowBot / EngagementAmplifier / RTBot    = [9.99, 9.99]
-cusp_delta: 9.99;  cusp_heads: EngagementAmplifier          = [9.99, 9.99]
-paused_liveness: LikeBot / MultiActionBot                   = [9.99, 9.99]
-spam_bounce:     TweetSpamBot(create) / ReplySpamBot(reply)  = [9.99, 9.99]
-reply_spam_hard_suspend_tau: 9.99
-```
+官方客户端 id 是**真实值**：`official_client_app_ids: [3033300, 129032, 258901, 191841]`（`bdsm/runtime/sink_policy.yaml:38`）。**所有操作点都是哨兵，不是生产值**（`sink_policy.yaml:15-40`）：`min_actions_for_enforcement: 999999`（不可能的计数）；`thresholds` 里 FollowBot / EngagementAmplifier / RTBot = `[9.99, 9.99]`；`cusp_delta: 9.99`、`cusp_heads` 的 EngagementAmplifier = `[9.99, 9.99]`；`paused_liveness` 的 LikeBot / MultiActionBot = `[9.99, 9.99]`；`spam_bounce` 的 TweetSpamBot(create) / ReplySpamBot(reply) = `[9.99, 9.99]`；`reply_spam_hard_suspend_tau: 9.99`。
 
 `sink_policy.yaml:4-13` 与 `bdsm/README.md:19-40` 明说：概率用越界哨兵 `9.99`、计数用不可能值 `999999` 替换，生产值内部配置。**结构、头名、动作映射、闸门逻辑是真的；阈值一个都不公开**——"bdsm 分超过多少会被封"在本知识库里无法回答。
 
@@ -269,17 +245,14 @@ reply_spam_hard_suspend_tau: 9.99
 
 ### 6.2 没有数值 cutoff，公开的都是路由阈值
 
-`state.py:86-101`：`SafetyPolicy{policyType, confidenceScore: int|None, reason}`、`SafetyPtosViolatedPolicy{category, score: int|None, reason, safetyPolicy}`。`score` / `confidenceScore` 是 **LLM 自己吐出的整数**，**sink 只按 `policyType` 分支，从不比较它们的大小**。**"grox 置信度多少会被判违规"在代码层面没有答案。** 提示词 `.j2` 未公开（`grox/flows/ptos/prompts.py:11-69` 给出理由：降低可被 game 的风险，并列出 11 个模板名），每个 policyType 的判定尺度同样不可知。
-
-公开的数值全是**路由 / 升级**阈值（`grox/flows/ptos/constants.py:22-47`）：
+`state.py:86-101`：`SafetyPolicy{policyType, confidenceScore: int|None, reason}`、`SafetyPtosViolatedPolicy{category, score: int|None, reason, safetyPolicy}`。`score` / `confidenceScore` 是 **LLM 自己吐出的整数**，**sink 只按 `policyType` 分支，从不比较它们的大小**。**"grox 置信度多少会被判违规"在代码层面没有答案。** 提示词 `.j2` 未公开（`grox/flows/ptos/prompts.py:11-69` 给出理由：降低可被 game 的风险，并列出 11 个模板名），每个 policyType 的判定尺度同样不可知。公开的数值全是**路由 / 升级**阈值（`grox/flows/ptos/constants.py:22-47`）：
 
 | 常量 | 值 | 作用 |
 |---|---|---|
 | `GEMMA` | `"oai-gemma4-26b"` | 小模型 slug |
 | `HIGH_FAV_THRESHOLD` | **128** | 赞数 ≥ 128 且 deluxe → 升级 Grok 4.3 |
 | （硬编码） | **1024** | 赞数 ≥ 1024 → 升级 4.6-internal |
-| `ADULT_CONTENT_LEADING_FRAMES_UNCONDITIONAL_FAV` | 512 | 无条件抽视频前 10 秒（视频需 ≥ 30 秒） |
-| `MEDIA_INJECTED_REASONING_FAV` | 512 | 注入媒体推理 |
+| `ADULT_CONTENT_LEADING_FRAMES_UNCONDITIONAL_FAV` / `MEDIA_INJECTED_REASONING_FAV` | 512 / 512 | 无条件抽视频前 10 秒（视频需 ≥ 30 秒）/ 注入媒体推理 |
 | `KEY_FRAMES_UNCONDITIONAL_FAV` | 1024 | 无条件关键帧 |
 | `MANY_MEDIA_CHUNK_SIZE` / `MANY_MEDIA_UNCONDITIONAL_FAV` | 4 / 256 | 多图分块 |
 
@@ -287,7 +260,7 @@ reply_spam_hard_suspend_tau: 9.99
 
 **结论：内容越火，审得越狠、用的模型越贵。** 这是"推流量"与"风控强度"直接耦合的证据——爆帖并不比冷帖更安全，反而会被更贵的模型反复复核。另：`task_safety_ptos_policy.py:76-86,130-174` 已有 NSFW 前科强制走 `AdultContentSexualHard`、高赞成人复检合成 `score=50`；`task_safety_ptos_safemodel_sex_nudity.py:22-33,79-89,123-153` 专用 slug `sex-and-nudity`、**正例桶 = {"R","X"}**、每视频 8 帧、每帖最多 12 个 payload、异常直接丢弃判定；`prior_nsfw.py:32-34` 读 `safetyBoolMetadata.isNsfw`。embedding 流水线另有算力闸门 `grox/flows/mm_emb/adaptive_min_fav.py:7-19,54-63`：`AdaptiveMinFav(start=20_000, target_qps=5.0, gain=0.3, deadband=0.1, window_s=30.0, floor=0, cap=20_000, warmup_s=60.0)`，**闲时门槛降到 0（全都算），忙时抬到 2 万赞**。
 
-### 6.4 回复垃圾：独立的 0–3 分链路
+### 6.3 回复垃圾：独立的 0–3 分链路
 
 - `grox/flows/reply_spam/classifier_reply_ranking.py:164-170`：score 必须落在 **[0,3]** rubric，越界抛错；`:48-51` 直方图桶 `[0.0, 1.0, 2.0, 3.0]`。
 - `grox/flows/reply_spam/task_write.py:140-141`：**`score == 0.0` → 打 `RiskyHighVizReply`**；`:127-138` 只在新分更低时才覆盖旧分（**单调下降，回复分只会越来越差**）。
@@ -317,27 +290,15 @@ reply_spam_hard_suspend_tau: 9.99
 | `CategoryClassification` | `/s/magicpony-category/magicpony-category-classification`，3000 ms | **未公开** | `MMP/CategoryClassificationModelDescriptor.scala:50-52` |
 | `CategoryClassificationEmbeddings` | `/s/embeddings-category/embeddings-category-classification`，4000 ms | **未公开**，`dimensions = 256` | `MMP/CategoryClassificationEmbeddingsModelDescriptor.scala:52-60` |
 
-`XxNsfw` 支持 `{TweetImage, TweetVideo, PeriscopeVideo, TweetGif}`（`XXNsfwModelDescriptor.scala:29-34`）；`ViolenceAndGore` 额外含 `{AvatarImage, BannerImage}`（`ViolenceAndGoreModelDescriptor.scala:35-41`）——**头像和横幅也过暴力模型**。Thrift 枚举 20 位（`media-model-proxy/src/main/thrift/com/twitter/cortex_media_annotator/annotate.thrift:8-29`），`XX_NSFW_V2` 已定义但**未注册**、`RESERVED_9..20` 占位 → **生产模型数量多于开源的 7 个**。标签名缺失原因已定位：基类 `def labels(): Map[String, Long] = Map()` 默认空（`MMP/ModelDescriptor.scala:25`），那 4 个模型没有 override。
-
-缺失的 `ViolenceAndGore` 阈值可从消费侧反推（`botmaker-rules/scarecrow/bot/ViolenceAndGore_ImageModel_MTT.bot:10-19,33-42`）：`TWEET_IMAGE` precision > **0.6**；`TWEET_VIDEO` raw score ≥ **0.95**；`AVATAR_IMAGE` / `BANNER_IMAGE` raw score ≥ **0.85**。`:88-101` `!IsHighPageRankUser` → `TweetRtfApplyLabel("GORE_AND_VIOLENCE_HIGH_PRECISION")`，否则**转人工**。
+`XxNsfw` 支持 `{TweetImage, TweetVideo, PeriscopeVideo, TweetGif}`（`XXNsfwModelDescriptor.scala:29-34`）；`ViolenceAndGore` 额外含 `{AvatarImage, BannerImage}`（`ViolenceAndGoreModelDescriptor.scala:35-41`）——**头像和横幅也过暴力模型**。Thrift 枚举 20 位（`media-model-proxy/src/main/thrift/com/twitter/cortex_media_annotator/annotate.thrift:8-29`），`XX_NSFW_V2` 已定义但**未注册**、`RESERVED_9..20` 占位 → **生产模型数量多于开源的 7 个**。标签名缺失原因已定位：基类 `def labels(): Map[String, Long] = Map()` 默认空（`MMP/ModelDescriptor.scala:25`），那 4 个模型没有 override。缺失的 `ViolenceAndGore` 阈值可从消费侧反推（`botmaker-rules/scarecrow/bot/ViolenceAndGore_ImageModel_MTT.bot:10-19,33-42`）：`TWEET_IMAGE` precision > **0.6**；`TWEET_VIDEO` raw score ≥ **0.95**；`AVATAR_IMAGE` / `BANNER_IMAGE` raw score ≥ **0.85**；`:88-101` `!IsHighPageRankUser` → `TweetRtfApplyLabel("GORE_AND_VIOLENCE_HIGH_PRECISION")`，否则**转人工**。
 
 ### 7.2 clip：256 维图文共享空间
 
-`clip/config.py:6,11-25`：`DEFAULT_FINAL_EMBEDDING_DIM = 256`、`input_resolution=224`、`clip_model_type="ViT-B/32"`、`logit_scale=4.5065`、`batch_size=128`、`learning_rate=2e-5`、`num_training_steps=100000`、`num_warmup_steps=500`。生产模型 `clip/keras_model.py:13-14` `PROD_MODEL = TWITTER_MODELS[0]` = **`Twitter-ViT-B/32-256`**（另有 128 维版未上线），两个变体都以开源 `ViT-B/32` 为底座继续训练（`clip/model.py:45-52`）；输出 **L2 归一化**（`clip/keras_model.py:128-130,138-140`）。编码器之上加 `PositionwiseFeedForward`（`clip/modules.py:31-41,44-81`），双向 `CrossEntropyLoss` 对比训练（`clip/training.py:143,163-171`）+ AdamW(betas=(0.9,0.98), eps=1e-6, weight_decay=0.01)（`clip/utils/train_utils.py:29-39`），数据是 `{tweet_text, image_byte_string}` 配对（`clip/datasets/language_image_dataset.py:29-32`）。
-
-**文本预处理会删掉 URL**：`clip/utils/data_utils.py:44-53` `regex_replace(text, r"\n|\t|\r|\r\n|http\S+", "")`。**embedding 里的文本语义不含链接**，链接风险由独立的 URL 模型负责。图像归一化用 Twitter 自己的均值方差（`data_utils.py:17-18`），与导出脚本不一致（§9.3）。
+`clip/config.py:6,11-25`：`DEFAULT_FINAL_EMBEDDING_DIM = 256`、`input_resolution=224`、`clip_model_type="ViT-B/32"`、`logit_scale=4.5065`。生产模型 `clip/keras_model.py:13-14` `PROD_MODEL = TWITTER_MODELS[0]` = **`Twitter-ViT-B/32-256`**（另有 128 维版未上线），以开源 `ViT-B/32` 为底座继续训练（`clip/model.py:45-52`），输出 **L2 归一化**（`clip/keras_model.py:128-130,138-140`），训练数据是 `{tweet_text, image_byte_string}` 配对（`clip/datasets/language_image_dataset.py:29-32`）。**文本预处理会删掉 URL**：`clip/utils/data_utils.py:44-53` `regex_replace(text, r"\n|\t|\r|\r\n|http\S+", "")` → **embedding 里的文本语义不含链接**，链接风险由独立的 URL 模型负责。图像归一化用 Twitter 自己的均值方差（`data_utils.py:17-18`），与导出脚本不一致（§9 第 15 项）。
 
 ### 7.3 adult-content 输出的不是布尔值，而是一整条曲线
 
-`adult-content/config.py:6,16-20,36`：embedding 256、Dense 128、batch 256、lr 0.001、100 epochs、400 steps、`num_thresholds=200`；网络 BatchNorm → Dense(128, gelu) → Dense(1, sigmoid)（`adult-content/training.py:25-38`），指标 `PrecisionAtRecall(0.9)` + PR-AUC、EarlyStopping patience 5（`:66-76`），50/50 拒绝重采样（`adult-content/dataset_utils.py:10-12,15-23`）。校准（`adult-content/calibration.py`）：
-
-| 步骤 | 内容 | 行号 |
-|---|---|---|
-| 阈值网格 | `np.linspace(0, 1, 200)` | `:16-20` |
-| 逐阈值指标 | precision / recall / fpr（分母为 0 时取 1） | `:22-32` |
-| 桶内正例率 | `pos_count / total`（空桶取上界） | `:38-46` |
-| **保序回归** | `IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip")` | `:61-69` |
-| 输出 | `thresholds_adult / precision_at_thresholds_adult / recall_at_thresholds_adult / false_positive_rate_at_thresholds_adult / probability_at_thresholds_adult` → `metrics_at_thresholds.csv` | `:78-88,97` |
+`adult-content/config.py:6,16-20,36`：embedding 256、Dense 128、`num_thresholds=200`；网络 BatchNorm → Dense(128, gelu) → Dense(1, sigmoid)（`adult-content/training.py:25-38`），指标 `PrecisionAtRecall(0.9)` + PR-AUC（`:66-76`），50/50 拒绝重采样（`adult-content/dataset_utils.py:10-12,15-23`）。校准（`adult-content/calibration.py`）：`np.linspace(0, 1, 200)` 阈值网格（`:16-20`）→ 逐阈值算 precision / recall / fpr（分母为 0 时取 1，`:22-32`）→ 桶内正例率 `pos_count / total`（空桶取上界，`:38-46`）→ **保序回归** `IsotonicRegression(y_min=0, y_max=1, increasing=True, out_of_bounds="clip")`（`:61-69`）→ 输出 `thresholds_adult / precision_at_thresholds_adult / recall_at_thresholds_adult / false_positive_rate_at_thresholds_adult / probability_at_thresholds_adult` 到 `metrics_at_thresholds.csv`（`:78-88,97`）。
 
 **模型交付的是 (threshold, precision, recall, fpr) 整条曲线，"是不是色情"由运营在曲线上选哪个点决定。** 生产操作点在 `botmaker-rules/scarecrow/derived-feature/`：
 
@@ -461,23 +422,18 @@ audience 不可混淆：**`NonAuthors` = 除作者本人以外全部丢弃（含
 
 ### 8.5 处罚服务里的信誉前置豁免与标签映射
 
-`abuse-enforcement-service/service-lib/src/strato.rs:134-142` `compose_cred`：`is_high = is_grey_badge || is_high_page_rank_user`，同时带上 `score` 与 `follower_count`（结构体 `src/entities.rs:10-15`）。`abuse-enforcement-service/service-lib/rules/enforcement_user.yaml:19-33` 两条 skip **排在所有处罚规则之前**：`high_follower_count`（`cred.follower_count >= 12.34`）与 `pagerank_skipped`（`cred.is_high || cred.score >= 12.34`）。**`12.34` / `12345.67` 是 YAML 注释明说的 mock 值（`:20,26`；帖子侧 `enforcement_post.yaml:24,30`），生产阈值不公开。** 帖子侧同样两条但多了 `&& !score.skip_author_credibility_prechecks`（`enforcement_post.yaml:23-37`）——**某些模型可以强制绕过信誉豁免**。
-
-`enforcement_user.yaml:36-189` 的标签 → 动作映射：
+`abuse-enforcement-service/service-lib/src/strato.rs:134-142` `compose_cred`：`is_high = is_grey_badge || is_high_page_rank_user`，同时带上 `score` 与 `follower_count`（结构体 `src/entities.rs:10-15`）。`abuse-enforcement-service/service-lib/rules/enforcement_user.yaml:19-33` 两条 skip **排在所有处罚规则之前**：`high_follower_count`（`cred.follower_count >= 12.34`）与 `pagerank_skipped`（`cred.is_high || cred.score >= 12.34`）。**`12.34` / `12345.67` 是 YAML 注释明说的 mock 值（`:20,26`；帖子侧 `enforcement_post.yaml:24,30`），生产阈值不公开。** 帖子侧同样两条但多了 `&& !score.skip_author_credibility_prechecks`（`enforcement_post.yaml:23-37`）——**某些模型可以强制绕过信誉豁免**。`enforcement_user.yaml:36-189` 的标签 → 动作映射（节选主干，另有 `anchor_campaign_user`、`spam_liveness_check_required`、`impersonation_scam_classifier_v1_suspend` 与"已打标 / 已封禁 → skip"去重规则）：
 
 | score.labels | 动作 | TTL |
 |---|---|---|
 | `anchor_campaign_suspend` / `panda_reports_embedding_v10_rough_spam` / `bb1_post_spam_bot_suspend` / `bb1_reply_spam_bot_suspend` / `bb1_user_suspend` | `act_suspend_user`（perm=false, PlatformManipulation） | — |
 | `anchor_campaign_suspend_cse` | `act_suspend_user`（**perm=true**, Cse） | — |
 | `bb1_post_spam_bot_bounce` / `bb1_reply_spam_bot_bounce` / `bb1_user_bounce` | SpamHighRecall + `act_spam_liveness_check` | **2592000000 ms = 30 天** |
-| `liveness_check_and_spam_high_recall_7d` / `spam_high_recall_7d` / `llm_slop_user` | SpamHighRecall（前者 + liveness） | **604800000 ms = 7 天** |
-| `SpamEmbeddingMajorityPoster` | SpamHighRecall | 30 天 |
+| `liveness_check_and_spam_high_recall_7d` / `spam_high_recall_7d` / `llm_slop_user` / `SpamEmbeddingMajorityPoster` | SpamHighRecall（第一个 + liveness） | 前三个 **604800000 ms = 7 天**，最后一个 30 天 |
 | `enforcement_cusp_arkose` / `_captcha` / `_liveness`（且无 `enforcement_threshold_reached`） | arkose / captcha / liveness | — |
 | 兜底 `when: "true"` | `act_suspend_user` | — |
 
-帖子侧（`enforcement_post.yaml:39-76`）：`llm_slop_post` → **RiskyHighVizReply**（30 天）；`gibberish_post` / `fast_reply_spam_post` / `anchor_campaign_post` / `SpamEmbeddingPtosDistilled` → **SpamHighRecall**（30 天）；`cse_reports_embedding_v2` → 永久封号（Cse）；兜底 `post_no_actionable_label` 是 skip 而非处罚。
-
-**闭环完成**：`bb1_*`（bdsm）→ `SpamHighRecall` 用户/帖子标签 → `author_rules.rs:204-209` / `tweet_rules.rs:944-949` → **For You 对非作者丢弃**；而 `llm_slop_post` → `RiskyHighVizReply` → **只掐通知**。
+帖子侧（`enforcement_post.yaml:39-76`）：`llm_slop_post` → **RiskyHighVizReply**（30 天）；`gibberish_post` / `fast_reply_spam_post` / `anchor_campaign_post` / `SpamEmbeddingPtosDistilled` → **SpamHighRecall**（30 天）；`cse_reports_embedding_v2` → 永久封号（Cse）；兜底 `post_no_actionable_label` 是 skip 而非处罚。**闭环完成**：`bb1_*`（bdsm）→ `SpamHighRecall` 用户/帖子标签 → `author_rules.rs:204-209` / `tweet_rules.rs:944-949` → **For You 对非作者丢弃**；而 `llm_slop_post` → `RiskyHighVizReply` → **只掐通知**。
 
 ---
 

@@ -203,10 +203,18 @@ README `What's not in this repo?` 承认，为降低被绕过风险，以下未�
 | 2026-09-18 | Under the Hood 增加法律合规限流信息 | 能看到被哪个国家屏蔽 |
 | 2026-10-08 | 排序模型改进停留时长预测 | `phoenix/xrex/models/loss_recsys.py` |
 | 2026-10-13 | 召回模型也训练去 surface「读完」的帖 | `recsys_two_tower_model.py` |
-| 2026-10-26 | 移除巴西选举过滤器 | 选举结束 |
+| 2026-10-26 | 移除 home-mixer 的 `Brazil2026ElectionFilter` | 选举结束；**VF 侧同名标签规则仍在**，见下 |
 | 2026-11-16 | 参数同步（本知识库数值基准） | |
 
 **趋势很明显：从「互动计数」转向「注意力时长 / 读完率」。** 2026 年 10 月两次更新都在强化时长建模。
+
+**巴西选举过滤器是两层，别当成一件事**：上游 10-26 移除的是 **home-mixer 的
+`Brazil2026ElectionFilter`**（本 commit 下 `home-mixer/` 内已 grep 不到）。
+但 **visibility-filtering 的 `brazil_election_legal/drop/undesirable` 仍然接线**
+（`tweet_rules.rs:951-959`，`OON_POST_DROPS` 成员 `levels.rs:215-220`），
+条件是 `TweetHasLabel(BRAZIL_ELECTION_LEGAL) && RequestCountryIs("br")`，audience `NonAuthors`。
+前者是排序侧的账号名单过滤，后者是可见性侧的法律标签规则，**删掉前者不等于后者失效**。
+详见 `04-visibility-filtering` §3.4、§4。
 
 ---
 

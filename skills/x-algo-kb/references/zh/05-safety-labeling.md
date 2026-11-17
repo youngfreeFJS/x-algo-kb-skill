@@ -8,14 +8,7 @@
 
 ## 1. 先划清可见性边界
 
-公开规则总量是**精确可数的**：`botmaker-rules/scarecrow/bot/` 下 **20 个 `.bot`**，`botmaker-rules/scarecrow/derived-feature/` 下 **53 个 `.df`**，全仓库再无其他 `.bot`/`.df` 文件。
-
-官方明确承认有隐藏规则：
-
-- `README.md:333`：「The rules `scarecrow` loads. To reduce the risk of gaming to circumvent these systems, **some rules aren't currently in this repository**.」
-- `README.md:444-447`：未公开清单包含「Grox prompts（j2 文件）」与「Some botmaker rules」。
-
-**所以「我找不到 X 的规则」只能推出「X 的规则未公开」，永远推不出「X 不存在」。** 本篇所有"缺失"都是这个含义，不是"平台不管这件事"。
+公开规则总量**精确可数**：`botmaker-rules/scarecrow/bot/` 下 **20 个 `.bot`**，`botmaker-rules/scarecrow/derived-feature/` 下 **53 个 `.df`**，全仓库再无其他 `.bot`/`.df`。官方明确承认有隐藏规则：`README.md:333`「The rules `scarecrow` loads. To reduce the risk of gaming to circumvent these systems, **some rules aren't currently in this repository**.」；`README.md:444-447` 的未公开清单含「Grox prompts（j2 文件）」与「Some botmaker rules」。**所以「我找不到 X 的规则」只能推出「X 的规则未公开」，永远推不出「X 不存在」。** 本篇所有"缺失"都是这个含义，不是"平台不管这件事"。
 
 ### 1.1 按用户关心的主题对照
 
@@ -23,24 +16,20 @@
 |---|---|---|
 | spam（链接 / 模型分） | 充分 | 规则 3226、20789、20998、21278、25026 |
 | 重复内容 | 半可见 | 处置侧可见（BBQ 两条）；**聚类相似度阈值在 BigQuery 侧，不在仓库**；`DUPLICATE_CONTENT` 生产规则缺失 |
-| bot / 自动化 | 间接 | `bb1_*_spam_bot_*` 系列在 abuse-enforcement 侧可见（第 7 节），botmaker 侧无 |
+| bot / 自动化 | 间接 | `bb1_*_spam_bot_*` 系列在 abuse-enforcement 侧可见（第 6 节），botmaker 侧无 |
 | **协同操纵 / coordinated manipulation** | **缺失** | 仅 `anchor_campaign_*` 标签名可见（`enforcement_user.yaml:37,40,44`），判定逻辑完全不可见 |
 | **刷互动 / engagement farming** | **缺失** | `ENGAGEMENT_SPAMMER` 只有消费端（`author_rules.rs:260`） |
 | **发帖速率限制** | **缺失** | 无任何用户发帖频率规则。仓库里的 `RateLimited` 是**保护平台自身**的闸门，不是限制用户 |
-| **新号限制 `NOT_GRADUATED`** | **缺失** | 只有消费端（`author_rules.rs:246`）；home-mixer 侧另有两道新号过滤，但**默认关**（第 12.3 节） |
+| **新号限制 `NOT_GRADUATED`** | **缺失** | 只有消费端（`author_rules.rs:246`）；home-mixer 侧另有两道新号过滤，但**默认关**（第 11.3 节） |
 | 外链 | 充分 | 6 条 URL 规则 |
 | @ 滥用 | 一条 | 5239，且必须叠加低质链接 |
 | **话题标签滥用 / hashtag abuse** | **完全缺失** | 全仓库无 hashtag 相关处置规则 |
 
 ### 1.2 只有消费端、没有生产端的 14 个标签
 
-在 `botmaker-rules/` 全目录反查，以下标签**产出规则命中数为 0**，但在 `visibility-filtering/` 里被明确消费——**线上一定存在，只是规则未公开**：
+在 `botmaker-rules/` 全目录反查，以下标签**产出规则命中数为 0**，但在 `visibility-filtering/` 里被明确消费——**线上一定存在，只是规则未公开**：`DUPLICATE_CONTENT`、`DUPLICATE_MENTION`、`SMYTE_SPAM_TWEET`、`DOWNRANK_SPAM_REPLY`、`ABUSIVE`、`UNTRUSTED_URL`、`ENGAGEMENT_SPAMMER`、`NOT_GRADUATED`、`RTBot`、`COMPROMISED`、`READ_ONLY`、`IMPERSONATION_HIGH_PRECISION`、`ABUSIVE_HIGH_RECALL`、`BLINK_WORST`。消费端证据：`visibility-filtering/rules/tweet_rules.rs:971-976`（`DUPLICATE_CONTENT`）、`:985-993`（`DUPLICATE_MENTION`，需 UQF）、`:995-1000`（`ABUSIVE`）、`:1002-1010`（`UNTRUSTED_URL`）、`:1012-1020`（`DOWNRANK_SPAM_REPLY`）、`:978-983`（`SMYTE_SPAM_TWEET`）；`author_rules.rs:246-251`（`NOT_GRADUATED`）、`:218-223`（`READ_ONLY`）、`:260-265`（`ENGAGEMENT_SPAMMER`）、`:267-276`（`BLINK_WORST`）。
 
-`DUPLICATE_CONTENT`、`DUPLICATE_MENTION`、`SMYTE_SPAM_TWEET`、`DOWNRANK_SPAM_REPLY`、`ABUSIVE`、`UNTRUSTED_URL`、`ENGAGEMENT_SPAMMER`、`NOT_GRADUATED`、`RTBot`、`COMPROMISED`、`READ_ONLY`、`IMPERSONATION_HIGH_PRECISION`、`ABUSIVE_HIGH_RECALL`、`BLINK_WORST`。
-
-消费端证据：`visibility-filtering/rules/tweet_rules.rs:971-976`（`DUPLICATE_CONTENT`）、`:985-993`（`DUPLICATE_MENTION`，需 UQF）、`:995-1000`（`ABUSIVE`）、`:1002-1010`（`UNTRUSTED_URL`）、`:1012-1020`（`DOWNRANK_SPAM_REPLY`）、`:978-983`（`SMYTE_SPAM_TWEET`）；`author_rules.rs:246-251`（`NOT_GRADUATED`）、`:218-223`（`READ_ONLY`）、`:260-265`（`ENGAGEMENT_SPAMMER`）、`:267-276`（`BLINK_WORST`）。
-
-另一个反直觉点：**`COPYPASTA_SPAM` 与 `SEARCH_BLACKLIST` 由 botmaker 产出，但整个 `visibility-filtering/` 里没有任何消费者**——它们作用于搜索侧，不影响 For You 推流。
+反向的坑：**`COPYPASTA_SPAM` 与 `SEARCH_BLACKLIST` 由 botmaker 产出，但整个 `visibility-filtering/` 无任何消费者**——它们作用于搜索侧，不影响 For You 推流。
 
 ### 1.3 绝不能当生产值传播的数字
 
@@ -49,11 +38,9 @@
 | `12.34`（粉丝数 / cred 分） | `enforcement_user.yaml:20,26`；`enforcement_post.yaml:24,30` | **官方 mock**。原文注释：「Prod uses a different follower count threshold; **this is a mock value to reduce gaming**.」 |
 | `12345.67`（`FOLLOWER_CEILING`） | `service-lib/src/safety_checks.rs:158-162` | 同上，mock |
 
-**`abuse-enforcement-service` 真实的信誉/粉丝豁免阈值未公开。** 唯一公开的真信誉门槛是 botmaker 侧的 `HighPageRankThreshold.df:2` = **54**，以及 Grox 侧的 `grox/flows/reply_spam/constants.py:9` `RISKY_HIGH_VIZ_REPLY_EXEMPT_MIN_PAGE_RANK_SCORE = 66`。
+**`abuse-enforcement-service` 真实的信誉/粉丝豁免阈值未公开。** 唯一公开的真信誉门槛是 botmaker 侧 `HighPageRankThreshold.df:2` = **54**，以及 Grox 侧 `grox/flows/reply_spam/constants.py:9` `RISKY_HIGH_VIZ_REPLY_EXEMPT_MIN_PAGE_RANK_SCORE = 66`。
 
----
-
-## 2. 三条并行链路
+### 1.4 三条并行链路，互不知情
 
 | 链路 | 输入 | 决策形式 | 节奏 |
 |---|---|---|---|
@@ -65,27 +52,15 @@
 
 ---
 
-## 3. 规则语言：读懂一条规则所需的最少知识
+## 2. 规则语言：读懂一条规则所需的最少知识
 
-### 3.1 物理形态：YAML 信封 + 两段 DSL
+### 2.1 YAML 信封 + 两段 DSL；`expiry` 不是 TTL
 
-`botmaker/src/thrift/com/twitter/botmaker/rule/rule.thrift:6-26`：
+`botmaker/src/thrift/com/twitter/botmaker/rule/rule.thrift:6-26` 定义 `BotMakerRule`：`eventType`（绑定哪个事件）、`booleanExpression`（condition，布尔门）、`actionExpression`（action，副作用）、`expiryDate`、`actionLimits`。`.bot` 字段一一对应：`id` / `event` / `condition` / `action` / `expiry` / `isActive` / `actionLimits`（`GroxTweetProcessor.bot:1-2,38-40`）。`.df` 是可复用的带类型函数，支持 `params(...)`、默认值、`returnType`（默认 `"Auto"`）、`logged`（`rule.thrift:40-48`）。
 
-```thrift
-struct BotMakerRule {
-  5:  required string eventType          // 绑定哪个事件
-  6:  required string booleanExpression  // condition：布尔门
-  7:  required string actionExpression   // action：副作用
-  10: optional DateTimeMilliSeconds expiryDate
-  14: optional map<string, list<ActionLimit>> actionLimits = {}
-}
-```
+**`expiry` 是规则自身的下线时间，不是标签 TTL。** `BBQDuplicateTextProd.bot:75` = `2027-02-21`，`GroxTweetProcessor.bot:38` = `2029-06-14`，`ProductionAgatha__FilterOutOrganicNotifications.bot:37` = `+292278994-08-17`（等于永不过期）。把 `expiry` 读成"标签关多久"是最常见的误读。
 
-`.bot` 字段一一对应：`id` / `event` / `condition` / `action` / `expiry` / `isActive` / `actionLimits`（`GroxTweetProcessor.bot:1-2,38-40`）。`.df` 是可复用的带类型函数，支持 `params(...)`、默认值、`returnType`（默认 `"Auto"`）、`logged`（`rule.thrift:40-48`）。
-
-**`expiry` 是规则自身的下线时间，不是标签 TTL。** `BBQDuplicateTextProd.bot:75` = `2027-02-21`，`GroxTweetProcessor.bot:38` = `2029-06-14`，而 `ProductionAgatha__FilterOutOrganicNotifications.bot:37` = `+292278994-08-17`（等于永不过期）。把 `expiry` 读成"标签关多久"是最常见的误读。
-
-### 3.2 `MATCHES` 是全串匹配，不是搜索
+### 2.2 `MATCHES` 是全串匹配，不是搜索
 
 `botmaker/src/java/com/twitter/botmaker/compiler/RegexCache.java:71-73`：
 
@@ -96,15 +71,11 @@ public boolean matches(Context<?> context, String regex, String str) {
 }
 ```
 
-调用 Java `Matcher.matches()`（整串），带 `DOTALL`，并有 **1000 ms 正则超时**（`RegexCache.java:151` `int DEFAULT_TIMEOUT_MS = 1000;`）。入口 `botmaker/src/java/com/twitter/botmaker/function/string/RegexMatch.java:45`，文法 `BotMaker.g:137-140`。
+调用 Java `Matcher.matches()`（整串），带 `DOTALL`，并有 **1000 ms 正则超时**（`RegexCache.java:151` `int DEFAULT_TIMEOUT_MS = 1000;`）。入口 `botmaker/src/java/com/twitter/botmaker/function/string/RegexMatch.java:45`，文法 `BotMaker.g:137-140`。**因此 `MATCHES ".*BAD"` = 含 BAD 后缀，`MATCHES "BAD"` = 严格等于 `"BAD"`。规则 3226 正是靠这两级区分处置强度：严格 `"BAD"` → `SPAM`，带后缀的 BAD 变体 → `SPAM_HIGH_RECALL`**（`Tweet_Spam_High_Recall_RTF_All_Bad_URL_Sources.bot:40-46`）。
 
-**因此 `MATCHES ".*BAD"` = 含 BAD 后缀，`MATCHES "BAD"` = 严格等于 `"BAD"`。规则 3226 正是靠这两级区分处置强度：严格 `"BAD"` → `SPAM`，带后缀的 BAD 变体 → `SPAM_HIGH_RECALL`**（`Tweet_Spam_High_Recall_RTF_All_Bad_URL_Sources.bot:40-46`）。
+其余语法要点（`botmaker/src/antlr/com/twitter/botmaker/antlr/BotMaker.g`）：`TRUE`/`FALSE`/`NULL` **必须大写**，小写是禁用关键字（`:84-86`）；反引号包外部符号 `` `AutoExpiringTempSkipList` ``（`:92`）；`:name` 局部变量（`:96`）、`.name` 字段（`:97`）；`$<path/comp>.field(args)` 读 Strato 列（`:190-193`）；`FOREACH`/`for`/`flatmap`/`val`/`with`/`if`/`{a; b; c}`（`:201-222`）；注释 `/* */` 或 `#`（`:80`）。事件类型共 **91 个** feature 类（`botmaker/scarecrow_features/src/main/java/com/twitter/scarecrow/features/`），公开 20 条规则只用了 9 个：`bqbm_scheduled_queries`（**仓库内无对应 feature 类**）、`url_event`、`url_reputation_change`、`media_update`、`tweet`、`follow`、`user_modification`、`health_side_effect`、`new_send_notification_write`、`grok_share`。`TweetCreate`/`TweetReport`/`UserCreate`/`UserReport`/`Bookmark`/`Favorite`/`Community*`/`AudioSpace*`/`DMReport`/`LoginChallengeAction`/`ArkoseVerifyEvent` 等事件**存在但无公开规则使用**——这些方向的规则被隐藏了。
 
-其余语法要点（`botmaker/src/antlr/com/twitter/botmaker/antlr/BotMaker.g`）：`TRUE`/`FALSE`/`NULL` **必须大写**，小写是禁用关键字（`:84-86`）；反引号包外部符号 `` `AutoExpiringTempSkipList` ``（`:92`）；`:name` 局部变量（`:96`）、`.name` 字段（`:97`）；`$<path/comp>.field(args)` 读 Strato 列（`:190-193`）；`FOREACH`/`for`/`flatmap`/`val`/`with`/`if`/`{a; b; c}`（`:201-222`）；注释 `/* */` 或 `#`（`:80`）。
-
-事件类型共 **91 个** feature 类（`botmaker/scarecrow_features/src/main/java/com/twitter/scarecrow/features/`），公开 20 条规则只用了 9 个：`bqbm_scheduled_queries`（**仓库内无对应 feature 类**）、`url_event`、`url_reputation_change`、`media_update`、`tweet`、`follow`、`user_modification`、`health_side_effect`、`new_send_notification_write`、`grok_share`。`TweetCreate`/`TweetReport`/`UserCreate`/`UserReport`/`Bookmark`/`Favorite`/`Community*`/`AudioSpace*`/`DMReport`/`LoginChallengeAction`/`ArkoseVerifyEvent` 等事件**存在但无公开规则使用**——这些方向的规则被隐藏了。
-
-### 3.3 动作：用 `ActionLevel` 认出真正的处置
+### 2.3 动作：用 `ActionLevel` 认出真正的处置
 
 `botmaker/src/java/com/twitter/botmaker/function/` 下 **155 个内置函数**，每个带 `ActionLevel` 标注，8 档见 `compiler/ActionLevel.java:3-12`。**真正改动线上可见性的动作被标为 `PROD_TANGIBLE_IMPACT_ACTION`**，这是识别"哪些函数是处置动作"的可靠标记。
 
@@ -120,29 +91,17 @@ public boolean matches(Context<?> context, String regex, String str) {
 
 防呆：`SetTweetRtfApplyLabelWithExpirationMs.df:2-15` 只有 `:expirationTimeMs > CurrentTimeMs()` 才真的打标，否则只记 `SetLabelWithExpiredTtl` 统计。
 
-### 3.4 计数与限流：三层，全是硬数字
+### 2.4 计数与限流：三层，全是硬数字
 
-**(a) 规则内 `RateLimited`**（`scarecrow/legacy/function/RateLimited.scala:32-47`）：参数为 `(action, lookback 秒, threshold, alias, default)`。超阈值走 `default`；**没给 default 就抛 `RateLimitedFunctionException`**（`:108-110`）。第 4 参 alias 让多条规则共享同一配额桶。
+**规则内 `RateLimited`**（`scarecrow/legacy/function/RateLimited.scala:32-47`）参数为 `(action, lookback 秒, threshold, alias, default)`：超阈值走 `default`，**没给 default 就抛 `RateLimitedFunctionException`**（`:108-110`）；第 4 参 alias 让多条规则共享同一配额桶。**规则级配额 `ActionLimit`**（`rule.thrift:28-38`）为 `{quota, periodInMinutes, strategy, version}`，`RateLimitingStrategy = TOKEN_BUCKET(0) | HALT_UNTIL_HUMAN_INTERVENTION(1)`；运行时 `scarecrow/ScarecrowBotMaker.scala:450-482`（`:461` `periodSecs = periodInMinutes * 60`），decider `enable_action_rate_limiter_${appName}_$env`（`:487-496`），熔断态 `waitingForHumanIntervention`（`:498-506`）。Halt 模式下超限会 `setBotActionHaltedState`——**整条 bot 停摆等人工**；计数器名 `"ActionRateLimiter_" + functionName`（`:601-603`）。**`:596-598` 是 fail-open**：`rescue { case _ => func.apply() }`，限流组件挂了照样打标。
 
-**(b) 规则级配额 `ActionLimit`**（`rule.thrift:28-38`）：`{quota, periodInMinutes, strategy, version}`，`RateLimitingStrategy = TOKEN_BUCKET(0) | HALT_UNTIL_HUMAN_INTERVENTION(1)`。运行时 `scarecrow/ScarecrowBotMaker.scala:450-482`（`:461` `periodSecs = periodInMinutes * 60`），decider `enable_action_rate_limiter_${appName}_$env`（`:487-496`），熔断态 `waitingForHumanIntervention`（`:498-506`）。Halt 模式下超限会 `setBotActionHaltedState`——**整条 bot 停摆等人工**。计数器名 `"ActionRateLimiter_" + functionName`（`:601-603`）。**`:596-598` 是 fail-open**：`rescue { case _ => func.apply() }`，限流组件挂了照样打标。
-
-**(c) 底层计数原语**：
-
-| 原语 | 精度 / 保留期 | 跨机房 | 证据 |
-|---|---|---|---|
-| `AddToHLL` / `GetHLLCount` | 默认 precision **60 秒**；默认 TTL **25 小时**，**硬上限 76 天**（超出被截断） | 可跨 DC | `scarecrow/legacy/HllCounterStoreRegistry.scala:26-27,34,93` |
-| `IncrementFeatureCountLite` / `GetFeatureCountLite` | 保留 **1 天** | **默认只读本 DC**，下游缓存 1 秒 | `scarecrow/legacy/LimiterRegistry.scala:28-34,75-81` |
-| `SetLabelWithTtl` | 默认 **26 小时** | Manhattan | `SpamLabelStoreRegistry.scala:55` |
-
-跨 DC 靠 `.df` 封装：`AddToHLLForDataCenter.df:5-8` 写 `Join(".", GetDataCenterName, :namespace)`；`GetHLLCountFromDataCenters.df:5-9` **同时读 `atla.<ns>` 与 `pdxa.<ns>` 再相加**。这就是 NSFW 账号升级判定必须绕这一层的原因——单机房计数会漏。
-
-其他可用信号：`GetUserCredV2`（`StratoRegistry.scala:120-135`）、`GetUserHealthScores(userId, List(modelNames))`（`:137-161`）、`FollowerCount`/`IsFollowing`（`FlockRegistry.scala:13-34,36-61`）、URL verdict `GOOD/BAD/UNKNOWN`（`UrlVerdictRegistry.scala:67`）、外部维护名单 `GetLongList(BMSymbol)`（`scarecrow/function/ListRegistry.scala:14-26`）。
+底层原语：`AddToHLL` / `GetHLLCount` 默认 precision **60 秒**、默认 TTL **25 小时**、**硬上限 76 天**（超出被截断），可跨 DC（`scarecrow/legacy/HllCounterStoreRegistry.scala:26-27,34,93`）；`IncrementFeatureCountLite` / `GetFeatureCountLite` 保留 **1 天**、**默认只读本 DC**、下游缓存 1 秒（`scarecrow/legacy/LimiterRegistry.scala:28-34,75-81`）；`SetLabelWithTtl` 默认 **26 小时**（`SpamLabelStoreRegistry.scala:55`）。跨 DC 靠 `.df` 封装：`AddToHLLForDataCenter.df:5-8` 写 `Join(".", GetDataCenterName, :namespace)`；`GetHLLCountFromDataCenters.df:5-9` **同时读 `atla.<ns>` 与 `pdxa.<ns>` 再相加**——这就是 NSFW 账号升级判定必须绕这一层的原因，单机房计数会漏。其他可用信号：`GetUserCredV2`（`StratoRegistry.scala:120-135`）、`GetUserHealthScores(userId, List(modelNames))`（`:137-161`）、`FollowerCount`/`IsFollowing`（`FlockRegistry.scala:13-34,36-61`）、URL verdict `GOOD/BAD/UNKNOWN`（`UrlVerdictRegistry.scala:67`）、外部维护名单 `GetLongList(BMSymbol)`（`scarecrow/function/ListRegistry.scala:14-26`）。
 
 ---
 
-## 4. 20 条公开规则速查表
+## 3. 20 条公开规则速查表
 
-### 4.1 URL 信誉类（6 条）——可见规则里最大的一族
+### 3.1 URL 信誉类（6 条）——可见规则里最大的一族
 
 | 规则 / id | 事件 | 触发条件与阈值 | 产出 |
 |---|---|---|---|
@@ -153,30 +112,20 @@ public boolean matches(Context<?> context, String regex, String str) {
 | `rtf_tweets_on_unsafe_verdict` / 20790 | `url_reputation_change` | `verdict == "UNSAFE" && (action == "PUT" \|\| "DELETE")`（`:4-7`）；`GetSlugsForUrl → GetTweetIdsForSlugs` **回溯历史推文**（`:11-13`） | PUT 打 4 标签（`:19-22`），**DELETE 撤 4 标签**（`:24-27`） |
 | `tweet_rtf_or_unrtf_on_bad_verdict` / 2002 | `url_reputation_change` | `verdict == "BAD"` + PUT/DELETE（`:4-5`）；PUT 需重查链 `Contains(:verdict,"BAD") && !Contains(...,"WHITELIST") && !Contains(...,"GOOD")`（`:13-20`） | 打/撤 `SPAM`（`:31,33`） |
 
-5239 的门槛原文（`LQ_Tweets_With_LQ_URL_Verdict_At_Mention_To_NonFollower.bot:23-27`）：
+5239 的门槛原文是一行 `Count(Filter(:victimId, !IsFollowing(GetUserIdFromScreenName(:victimId), :authorId), GetMentionedScreenNames(GetTweetText(tweetId)))) > 0`（`LQ_Tweets_With_LQ_URL_Verdict_At_Mention_To_NonFollower.bot:23-27`）。**门槛是 `> 0`，@ 一个陌生人都算，没有数量下限；但必须同时带低质链接**——纯 @ 骚扰（无链接）的生产规则不可见。
 
-```
-    Count(Filter(
-      :victimId,
-      !IsFollowing(GetUserIdFromScreenName(:victimId), :authorId),
-      GetMentionedScreenNames(GetTweetText(tweetId))
-    )) > 0 &&
-```
-
-**门槛是 `> 0`，@ 一个陌生人都算，没有数量下限。但必须同时带低质链接**——纯 @ 骚扰（无链接）的生产规则不可见。
-
-### 4.2 账号行为类（2 条）——置顶推文连坐
+### 3.2 账号行为类（2 条）——置顶推文连坐
 
 | 规则 / id | 事件 | 条件 | 产出 |
 |---|---|---|---|
 | `PinnedLowQualityOrBadUrl` / 20719 | `user_modification` | `pinnedTweetIds.simple.after` 存在、非空、**且与 `.before` 不同**（`:6-14`）；展开 URL 后 `GetReputationV2(GetUrlResolutions(:urls))` 任一 verdict `== "BAD" \|\| == "LOW_QUALITY"`（`:15-24`） | `SetUserLabel(spammerId, "SPAM_HIGH_RECALL", "[bot/20719] PinnedLowQualityOrBadUrl", CurrentTimeMs() + OneWeekInSecs*1000)`（`:36-41`）→ **账号级 7 天** |
 | `FollowFromActorWithPinnedLowQualityOrBadUrl` / 20732 | `follow` | **发起关注者**的置顶推文含 BAD/LOW_QUALITY 链接（`:7-29`） | 同样账号级 `SPAM_HIGH_RECALL` **7 天**（`:40-45`），日志文案「Restricting notifications.」 |
 
-### 4.3 内容模型类（8 条）
+### 3.3 内容模型类（8 条）
 
 | 规则 / id | 事件 | 阈值（原文数字） | 产出 |
 |---|---|---|---|
-| `NsfwTweetMediaProcessor` / 22418 | `health_side_effect`（`subEvent == "nsfw_tweet_media"`，`:4`） | `label == "3" && score > 0.99`（`:7-12`）；`label == "3"`（`:16-19`）；`label == "4"`（`:23-26`） | `ApplyNsfwUserLabel` → `NSFW_NEAR_PERFECT` / `NSFW_HIGH_PRECISION` / `NSFW_HIGH_RECALL`（`:12,19,26`），**并触发账号级升级判定**（第 8 节） |
+| `NsfwTweetMediaProcessor` / 22418 | `health_side_effect`（`subEvent == "nsfw_tweet_media"`，`:4`） | `label == "3" && score > 0.99`（`:7-12`）；`label == "3"`（`:16-19`）；`label == "4"`（`:23-26`） | `ApplyNsfwUserLabel` → `NSFW_NEAR_PERFECT` / `NSFW_HIGH_PRECISION` / `NSFW_HIGH_RECALL`（`:12,19,26`），**并触发账号级升级判定**（第 7 节） |
 | `nsfw_user_write_user_label` / 22358 | `health_side_effect`（`nsfw_user`） | `GetUser != NULL && !IsTestUser`（`:4-6`） | `ApplyNsfwUserLabelOrCreateReport(userId, "NSFW_HIGH_PRECISION"/"NSFW_HIGH_RECALL", ...)`（`:9-10`） |
 | `ViolenceAndGore_ImageModel_MTT` / 20616 | `media_update` | 标注身份 `domainId == 140 && groupId == 34 && entityId == 1199070453920223232`（`:33-35`）；**`TWEET_IMAGE` precision `> 0.6`**（`:10,37`）；**`TWEET_VIDEO` raw_score `>= 0.95`**、**`AVATAR_IMAGE` `>= 0.85`**、**`BANNER_IMAGE` `>= 0.85`**（`:12-14,40-41`） | 头像/横幅 → **只建人工工单** `CreateRtpReportAsyncProd(..., "MEDIA_PROACTIVE_REVIEW", ...)`（`:83-86`）；推文媒体且非高信誉 → `TweetRtfApplyLabel("GORE_AND_VIOLENCE_HIGH_PRECISION", tweetId)`（`:88-97`）；否则转人工（`:99`） |
 | `AgathaSpamProduction__ApplySearchTopTweetLabel` / 20998 | `tweet` | `GetUserHealthScores(spammerId, List("AgathaAllSpamReportsPerFav","AgathaSpamSuspended"))`（`:8-14`）；**`allSpamReportsPerFavScore > 0.9975 \|\| spamSuspendedScore > 0.98`**（`:14`） | `AGATHA_SPAM` 推文标签，**TTL 7 天**（`:22-26`） |
@@ -196,7 +145,7 @@ public boolean matches(Context<?> context, String regex, String str) {
 
 **注意 high-recall 档的不等号是反向的：recall 分越低越危险，与 precision 相反。** 把 `<= 0.8568428` 读成"精确率不足 85.7% 才放过"是错的。暴力/血腥模型则**视频要 0.95、图片只要 0.6**（`ViolenceAndGore_ImageModel_MTT.bot:10,12`），图片打标门槛显著更低。
 
-### 4.4 批量重复文本类（2 条）
+### 3.4 批量重复文本类（2 条）
 
 | 规则 / id | jobName 白名单 | 限流 | 产出 |
 |---|---|---|---|
@@ -207,9 +156,9 @@ public boolean matches(Context<?> context, String regex, String str) {
 
 ---
 
-## 5. 三条完整规则原文
+## 4. 三条完整规则原文
 
-### 5.1 批量重复文本 → `COPYPASTA_SPAM`（`BBQDuplicateTextProd.bot:1-77`，id 21711）
+### 4.1 批量重复文本 → `COPYPASTA_SPAM`（`BBQDuplicateTextProd.bot`，id 21711）
 
 ```yaml
 id: '21711'
@@ -225,11 +174,9 @@ condition: |
   entityType == "tweetIdCluster"
 ```
 
-action 段要点（同文件）：`:19-22` 三重去重（已处理过 / 已有 `COPYPASTA_SPAM` / card2 是 `promo_video_convo`|`promo_image_convo` 广告卡）；`:30-33` 四类作者豁免；`:38-39` **`val :rateLimitThreshold = 1000 * 100;` `val :rateLimitTimePeriod = OneMinuteInSecs;`** → **每 60 秒最多 10 万条**；`:46-47` 打标 + 写 24h 去重标记；`:55-59` 给作者写 Guano 备注，`:15` `maxGuanoNotes = 1`；`:42-69` 整段包在 `RateLimited(..., jobName, {Log("BBQDuplicateTextProd_rate_limited", ...)})` 里，**超限只记日志、丢弃本批**。
+action 段要点（同文件）：`:19-22` 三重去重（已处理过 / 已有 `COPYPASTA_SPAM` / card2 是 `promo_video_convo`|`promo_image_convo` 广告卡）；`:30-33` 四类作者豁免；`:38-39` **`val :rateLimitThreshold = 1000 * 100;` `val :rateLimitTimePeriod = OneMinuteInSecs;`** → **每 60 秒最多 10 万条**；`:46-47` 打标 + 写 24h 去重标记；`:55-59` 给作者写 Guano 备注，`:15` `maxGuanoNotes = 1`；`:42-69` 整段包在 `RateLimited(..., jobName, {Log("BBQDuplicateTextProd_rate_limited", ...)})` 里，**超限只记日志、丢弃本批**。**`entityType == "tweetIdCluster"` 说明上游 BigQuery 作业已把全站推文按文本聚成簇，botmaker 只负责给簇里每条推文打标。判定重复的算法（unigram / CJK 字符）在 BigQuery 侧，不在本仓库**——"重复到什么程度算重复"不可见，可见的只有处置侧 10 万/分钟的闸门。
 
-**`entityType == "tweetIdCluster"` 说明上游 BigQuery 作业已把全站推文按文本聚成簇，botmaker 只负责给簇里每条推文打标。判定重复的算法（unigram / CJK 字符）在 BigQuery 侧，不在本仓库**——"重复到什么程度算重复"不可见，可见的只有处置侧 10 万/分钟的闸门。
-
-### 5.2 模型分 → 账号标签 + 6 天疲劳（`ProductionAgatha__FilterOutOrganicNotifications.bot:1-39`，id 21278，全文）
+### 4.2 模型分 → 账号标签 + 6 天疲劳（`ProductionAgatha__FilterOutOrganicNotifications.bot:1-39`，id 21278，全文）
 
 ```yaml
 id: '21278'
@@ -272,7 +219,7 @@ action: |
 
 **触发点是"要给别人发通知"这一刻，不是发帖时。** 三个 Agatha 模型分**任一**超阈值即命中：`AgathaSpamSuspended > 0.99`、`AgathaAllSpamReportsPerFav > 0.999`、`AgathaSpamReportsPerFav > 0.999`（后两者是"举报数/点赞数"比值模型）。产出账号标签 `AGATHA_SPAM_TOP_USER` **TTL 7 天**，同时写 **6 天疲劳标记**，同一账号 6 天内不会被这条规则重复处置。疲劳命名空间按规则 ID 隔离：`CreateRemediationFatigueNamespace.df:2` = `Concat(RemediationFatigueLabel, "_", ToString(RULE_ID))`，常量 `RemediationFatigueLabel.df:2` = `"REMEDIATION_FATIGUE_LABEL"`。
 
-### 5.3 Grox 模型 → 高风险回复标签 14 天（`GroxTweetProcessor.bot:3-30`，id 25026）
+### 4.3 Grox 模型 → 高风险回复标签 14 天（`GroxTweetProcessor.bot:3-30`，id 25026）
 
 ```yaml
 condition: |
@@ -303,13 +250,13 @@ action: |
     }
 ```
 
-**`spamScore >= 0.97` 是唯一模型阈值**；额外豁免"**自己回复自己的主帖**"（`:15,22`）——自问自答不算高风险回复。标签 `RISKY_HIGH_VIZ_REPLY` **TTL 14 天**。**这个标签的实际作用面是通知，不是 For You，见第 10 节。**
+**`spamScore >= 0.97` 是唯一模型阈值**；额外豁免"**自己回复自己的主帖**"（`:15,22`）——自问自答不算高风险回复。标签 `RISKY_HIGH_VIZ_REPLY` **TTL 14 天**。**这个标签的实际作用面是通知，不是 For You，见第 9 节。**
 
 ---
 
-## 6. 反直觉的行为触发点
+## 5. 反直觉的行为触发点
 
-这一节是本篇最容易被误判的部分：**很多处置不是"发帖时"评估的，而是被一个看似无关的动作触发的。**
+**很多处置不是"发帖时"评估的，而是被一个看似无关的动作触发的。**
 
 | 你的动作 | 实际发生的事 | 证据 |
 |---|---|---|
@@ -321,9 +268,7 @@ action: |
 
 **URL 信誉变更会回溯改写历史推文的标签，并且可撤销。** 这是"删了链接/链接被洗白后限流解除"的代码依据，也是唯一可见的自动撤标路径。
 
-### 6.1 Grok 生成图 → 分享链接 → 转发者连坐
-
-一条完整可见的因果链：
+### 5.1 Grok 生成图 → 分享链接 → 转发者连坐
 
 ```
 Grok 生成 NSFW 图（IsHighPrecisionNsfw）
@@ -334,53 +279,19 @@ Grok 生成 NSFW 图（IsHighPrecisionNsfw）
      补 NSFW_CARD_IMAGE 推文标签
 ```
 
-证据：`NSFW_Grok_Generated_Image_To_URL_Verdict.bot:6-7,14-26` → `NSFW_Grok_Share.bot:7-10,14,18` → `NSFW_Card_Image_URL_to_Tweet_Verdict.bot:7-8,20-24`。
-
-**注意精确性：24603 写入的 verdict 是 `NSFW_CARD_IMAGE`，不是 `BAD`。** 因此它不会经 3226（要求 `MATCHES ".*BAD"`）产出 `SPAM`/`SPAM_HIGH_RECALL`；连坐落点是 `NSFW_CARD_IMAGE` 推文标签（消费端 `visibility-filtering/rules/tweet_rules.rs:679-684` 等）。**但"谁转发这个链接谁被连带打标"这个结论成立，且媒体侧记忆长达 75 天。**
+证据：`NSFW_Grok_Generated_Image_To_URL_Verdict.bot:6-7,14-26` → `NSFW_Grok_Share.bot:7-10,14,18` → `NSFW_Card_Image_URL_to_Tweet_Verdict.bot:7-8,20-24`。**注意精确性：24603 写入的 verdict 是 `NSFW_CARD_IMAGE`，不是 `BAD`**，因此不会经 3226（要求 `MATCHES ".*BAD"`）产出 `SPAM`/`SPAM_HIGH_RECALL`；连坐落点是 `NSFW_CARD_IMAGE` 推文标签（消费端 `visibility-filtering/rules/tweet_rules.rs:679-684` 等）。**但"谁转发这个链接谁被连带打标"这个结论成立，且媒体侧记忆长达 75 天。**
 
 ---
 
-## 7. abuse-enforcement-service：模型分驱动的处置档位
+## 6. abuse-enforcement-service：模型分驱动的处置档位
 
 不消费事件，消费模型已产出的 `score.labels`，用 CEL 表达式 YAML 做**首命中**决策。Rust 实现，规则通过 `include_str!` 编译进二进制（`service-lib/src/rules.rs:13-14`），CEL 编译在 `:129`。`enforcement_user.yaml:1` 注明「mirrored from GrowthBook dynamic config; last sync **2026-10-20T01:49:10Z**」——**线上真值在 GrowthBook，仓库是快照**。
 
-### 7.1 只有三类动作，**没有 read-only**
+### 6.1 只有三类动作，**没有 read-only**
 
-`service-lib/src/decision.rs:1-41`：
+`service-lib/src/decision.rs:1-41`：`Decision::{Skip(String), Act(Vec<ActionSpec>)}`；`ActionSpec::{SuspendUser{perm, policy}, AddLabelsV2{labels, ttl_msec}, AddPostLabelsV2{labels, ttl_msec}, Arkose, Captcha, SpamLivenessCheck}`。**全部动作只有三类：打标 / 挑战验证 / 封禁。`READ_ONLY` 只作为被消费的作者标签存在（`author_rules.rs:218`），本服务不产出它。** 去重分类 `decision.rs:27-40`，常量 `service-lib/src/dedup_cache.rs:11-15`（0/1/2/3/4）：`CLASS_SUSPEND_PERMANENT` / `CLASS_SUSPEND` / `CLASS_CHALLENGE`（Arkose|Captcha|SpamLivenessCheck 归为一类）/ `CLASS_LABEL`。**同类动作短期内不重复下发。** 封禁策略只有两种：`types/src/action_control.rs:201-205` `SuspensionPolicy::{PlatformManipulation, Cse}`（Cse = 儿童性剥削，永久封）。
 
-```rust
-Decision::{Skip(String), Act(Vec<ActionSpec>)}
-ActionSpec::{SuspendUser{perm, policy}, AddLabelsV2{labels, ttl_msec},
-             AddPostLabelsV2{labels, ttl_msec}, Arkose, Captcha, SpamLivenessCheck}
-```
-
-**全部动作只有三类：打标 / 挑战验证 / 封禁。`READ_ONLY` 只作为被消费的作者标签存在（`author_rules.rs:218`），本服务不产出它。**
-
-去重分类 `decision.rs:27-40`，常量 `service-lib/src/dedup_cache.rs:11-15`（0/1/2/3/4）：`CLASS_SUSPEND_PERMANENT` / `CLASS_SUSPEND` / `CLASS_CHALLENGE`（Arkose|Captcha|SpamLivenessCheck 归为一类）/ `CLASS_LABEL`。**同类动作短期内不重复下发。** 封禁策略只有两种：`types/src/action_control.rs:201-205` `SuspensionPolicy::{PlatformManipulation, Cse}`（Cse = 儿童性剥削，永久封）。
-
-### 7.2 分级阶梯 `suggested()`
-
-`types/src/action_control.rs:398-416` 原文：
-
-```rust
-pub fn suggested(entity: ControlEntity, row: LevelRow) -> Vec<PageAction> {
-    match (entity, row) {
-        (ControlEntity::User, LevelRow::Low) => vec![PageAction::LivenessCheck {}],
-        (ControlEntity::User, LevelRow::Mid) => vec![
-            PageAction::LivenessCheck {},
-            PageAction::SpamHighRecall { lifetime: Lifetime::Days7 },
-        ],
-        (ControlEntity::User, LevelRow::High) => vec![PageAction::SUSPEND],
-        (ControlEntity::Post, LevelRow::Mid) => vec![PageAction::PostSpamHighRecall {
-            lifetime: Lifetime::Days30,
-        }],
-        (ControlEntity::Post, LevelRow::High) => vec![PageAction::PostSpamHighRecall {
-            lifetime: Lifetime::Permanent,
-        }],
-        (ControlEntity::Post, LevelRow::Low) | (_, LevelRow::Missing) => vec![],
-    }
-}
-```
+### 6.2 分级阶梯 `suggested()`（`types/src/action_control.rs:398-416`）
 
 | 实体 | Low | Mid | High |
 |---|---|---|---|
@@ -389,7 +300,7 @@ pub fn suggested(entity: ControlEntity, row: LevelRow) -> Vec<PageAction> {
 
 `Lifetime` → 毫秒：`action_control.rs:190-192`（`Days7 = 7*86_400_000`、`Days30 = 30*86_400_000`、`Permanent = None`）。`PageAction` 全集 `:276-294`。落地映射 `service-lib/src/action_control.rs:144-190`：`SpamHighRecall → AddLabelsV2["SpamHighRecall"]`、`PhoenixSkip → AddLabelsV2["ClientEventPhoenixSkip"]`、`PostSpamHighRecall → AddPostLabelsV2["SpamHighRecall"]`、**`HideReply → AddPostLabelsV2["RiskyHighVizReply"]`**（`:142` 常量）、`SuspendAuthor → SuspendUser{perm:false, PlatformManipulation}`。Gizmoduck 序号：`service-lib/src/gizmoduck_labels.rs:1-11` `SpamHighRecall` = **23**，`ClientEventPhoenixSkip` = **118**。可打的推文标签白名单 `action_control.rs:229-234` `PAGE_POST_LABELS = ["NsfaHighPrecision","NsfaLimitedInventory","NsfwHighPrecision","SoftNsfw"]`。
 
-### 7.3 Low/Mid/High 怎么定：precision 下限 **+ 二项检验**
+### 6.3 Low/Mid/High 怎么定：precision 下限 **+ 二项检验**
 
 `types/src/action_control.rs:63-69`：`Low => 0.70`、`Mid => 0.85`、`High => 0.95`。**但这只是 precision 下限，还要过人工抽检样本量检验。** `service-lib/src/confidence.rs:138-164`：
 
@@ -399,9 +310,7 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 }
 ```
 
-`ALPHA = 0.05`（`:19`），即**二项分布上尾检验**：在"真实精确率 = floor"的假设下，观察到 `reads - humans` 次非人类判定的概率必须 ≤ 5%。`supported_level`（`:166-186`）取满足 `lower_bound >= floor && read_meets(...)` 的**最高档**。
-
-单测钉死了最小样本量（`confidence.rs:294-312`，测试名 `the_memo_read_counts_meet_their_floors_and_one_fewer_does_not`）：
+`ALPHA = 0.05`（`:19`），即**二项分布上尾检验**：在"真实精确率 = floor"的假设下，观察到 `reads - humans` 次非人类判定的概率必须 ≤ 5%。`supported_level`（`:166-186`）取满足 `lower_bound >= floor && read_meets(...)` 的**最高档**。单测钉死了最小样本量（`confidence.rs:294-312`，测试名 `the_memo_read_counts_meet_their_floors_and_one_fewer_does_not`）：
 
 | 目标档 | floor | 0 次人工推翻 | 1 次 | 2 次 | 少 1 个样本就降档 |
 |---|---|---|---|---|---|
@@ -409,11 +318,9 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 | **Mid** | 0.85 | **≥ 19 reads** | ≥ 50（3 次推翻） | ≥ 68（5 次推翻） | `ev(0.85, 18, 0)` → 只到 Low |
 | **Low** | 0.70 | **≥ 9 reads** | — | — | `ev(0.70, 8, 0)` → **None** |
 
-**`ev(0.99, 10, 0)` 即使 precision 下限 0.99，样本只有 10 个也只能认 Low。** `ev(0.70, 50, 25)` → None（人工推翻一半）。
+**`ev(0.99, 10, 0)` 即使 precision 下限 0.99，样本只有 10 个也只能认 Low。** `ev(0.70, 50, 25)` → None（人工推翻一半）。证据护栏：`confidence.rs:12-19` `DEFAULT_EVIDENCE_MAX_AGE_DAYS = 30`、`DEFAULT_FACTORY_EVIDENCE_MAX_AGE_DAYS = 365`、`CLOCK_SKEW_MS = 300_000`（5 分钟）、`MAX_READS = 100_000`；`types/src/action_control.rs:153` `EVIDENCE_OVERRIDE_MAX_MS = 7 * 86_400_000`（人工覆盖证据 7 天失效）。拒绝条件（`confidence.rs:166-186,193-199`）：非有限/越界下限、`reads == 0`、`reads > 100k`、`humans > reads`、证据过期或来自未来。`LevelRow` 映射 `confidence.rs:29-37`：`0→Missing, 1→Low, 2→Mid, 3→High`，其他值 → Missing + unknown。
 
-证据护栏：`confidence.rs:12-19` `DEFAULT_EVIDENCE_MAX_AGE_DAYS = 30`、`DEFAULT_FACTORY_EVIDENCE_MAX_AGE_DAYS = 365`、`CLOCK_SKEW_MS = 300_000`（5 分钟）、`MAX_READS = 100_000`；`types/src/action_control.rs:153` `EVIDENCE_OVERRIDE_MAX_MS = 7 * 86_400_000`（人工覆盖证据 7 天失效）。拒绝条件（`confidence.rs:166-186,193-199`）：非有限/越界下限、`reads == 0`、`reads > 100k`、`humans > reads`、证据过期或来自未来。`LevelRow` 映射 `confidence.rs:29-37`：`0→Missing, 1→Low, 2→Mid, 3→High`，其他值 → Missing + unknown。
-
-### 7.4 账号处置流水线（`enforcement_user.yaml`，190 行，首命中）
+### 6.4 账号处置流水线（`enforcement_user.yaml`，190 行，首命中）
 
 前置豁免（skip）：`:6-10` 白名单；`:12-16` `!user.present`；`:19-24` 粉丝数（**mock**）；`:26-33` cred（**mock**）；`:144-148` 已封禁；`:150-154` 已停用。
 
@@ -422,31 +329,20 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 | `:36-38` | `anchor_campaign_suspend` | 封禁 `perm:false, PlatformManipulation` | — |
 | `:39-41` | `anchor_campaign_user` | `AddLabelsV2 ["SpamHighRecall"]` | **无 ttl = 永久** |
 | `:43-45` | `anchor_campaign_suspend_cse` | 封禁 **`perm:true, Cse`** | 永久 |
-| `:47-49` | `panda_reports_embedding_v10_rough_spam` | 封禁 `perm:false` | — |
-| `:51-53` | `bb1_post_spam_bot_suspend` | 封禁 | — |
-| `:55-63` | `bb1_post_spam_bot_bounce` | `act_all`：`SpamHighRecall` + `spam_liveness_check` | **`2592000000` = 30 天**（`:62`） |
-| `:65-67` | `bb1_reply_spam_bot_suspend` | 封禁 | — |
-| `:69-77` | `bb1_reply_spam_bot_bounce` | `SpamHighRecall` + 活体 | 30 天（`:76`） |
-| `:79-81` | `bb1_user_suspend` | 封禁 | — |
+| `:47-49` / `:51-53` / `:65-67` / `:79-81` / `:177-182` | `panda_reports_embedding_v10_rough_spam` / `bb1_post_spam_bot_suspend` / `bb1_reply_spam_bot_suspend` / `bb1_user_suspend` / `impersonation_scam_classifier_v1_suspend` | 封禁 `perm:false` | — |
+| `:55-63` / `:69-77` / `:100-108` | `bb1_post_spam_bot_bounce` / `bb1_reply_spam_bot_bounce` / `bb1_user_bounce` | `act_all`：`SpamHighRecall` + `spam_liveness_check` | **`2592000000` = 30 天**（`:62,76,107`） |
 | `:83-91` | `liveness_check_and_spam_high_recall_7d` | `SpamHighRecall` + 活体 | **`604800000` = 7 天**（`:90`） |
 | `:93-98` | `spam_high_recall_7d` | `SpamHighRecall` | 7 天（`:98`） |
-| `:100-108` | `bb1_user_bounce` | `SpamHighRecall` + 活体 | 30 天（`:107`） |
-| `:112-116` | `llm_slop_user` **且已有** `SpamHighRecall` | **skip**（不叠加） | — |
+| `:112-116` / `:125-129` | `llm_slop_user` / `SpamEmbeddingMajorityPoster` **且已有** `SpamHighRecall` | **skip**（不叠加） | — |
 | `:118-123` | `llm_slop_user` | `SpamHighRecall` | **7 天**（`:123`） |
-| `:125-129` | `SpamEmbeddingMajorityPoster` 且已有标签 | skip | — |
 | `:131-136` | `SpamEmbeddingMajorityPoster` | `SpamHighRecall` | **30 天**（`:136`） |
 | `:139-142` | `spam_liveness_check_required` | 活体检测 | — |
-| `:156-161` | `enforcement_cusp_arkose` && !`enforcement_threshold_reached` | **Arkose 挑战** | — |
-| `:163-168` | `enforcement_cusp_captcha` && !`enforcement_threshold_reached` | **Captcha** | — |
-| `:170-175` | `enforcement_cusp_liveness` && !`enforcement_threshold_reached` | 活体检测 | — |
-| `:177-182` | `impersonation_scam_classifier_v1_suspend` | 封禁 `perm:false` | — |
+| `:156-161` / `:163-168` / `:170-175` | `enforcement_cusp_arkose` / `enforcement_cusp_captcha` / `enforcement_cusp_liveness`，均 && !`enforcement_threshold_reached` | **Arkose 挑战 / Captcha / 活体检测** | — |
 | **`:184-189`** | **`when: "true"`（兜底）** | **封禁 `perm:false, PlatformManipulation`** | — |
 
-**账号流水线的兜底是封禁。** `rules.rs:105-120` 强制要求必须有 `when: true` 终结项，否则 `EvalError::NoMatch`。**能进入账号处置流水线、且没被前面任何豁免/轻处置拦下的，默认封号。**
+**账号流水线的兜底是封禁。** `rules.rs:105-120` 强制要求必须有 `when: true` 终结项，否则 `EvalError::NoMatch`。**能进入账号处置流水线、且没被前面任何豁免/轻处置拦下的，默认封号。** 另注意 **`llm_slop_user`（AI 灌水）→ 7 天、`SpamEmbeddingMajorityPoster`（embedding 判定"绝大多数发帖是 spam"）→ 30 天，这是可见的 AI 生成内容处置档位**；两者都有"已有 `SpamHighRecall` 就跳过"的前置项，不叠加延长。
 
-**`llm_slop_user`（AI 灌水）→ 7 天、`SpamEmbeddingMajorityPoster`（embedding 判定"绝大多数发帖是 spam"）→ 30 天，这是可见的 AI 生成内容处置档位。** 两者都有"已有 `SpamHighRecall` 就跳过"的前置项，不叠加延长。
-
-### 7.5 推文处置流水线（`enforcement_post.yaml`，82 行）
+### 6.5 推文处置流水线（`enforcement_post.yaml`，82 行）
 
 前置 skip：`:5-21` 推文/作者白名单、作者不存在；`:23-28` 粉丝数、`:30-37` cred（均为 mock），两者都带 `&& !score.skip_author_credibility_prechecks`。**`skip_author_credibility_prechecks` 是个可绕过信誉豁免的开关**，CEL 上下文定义 `rules.rs:211-237`（`ScoreCel{labels, model_version, skip_author_credibility_prechecks}`）。
 
@@ -462,7 +358,7 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 
 **对比关键：推文流水线兜底是"不动"，账号流水线兜底是"封禁"。** 且推文侧可以直接封作者（`:71-76`，CSE 场景）。
 
-### 7.6 全局护栏
+### 6.6 全局护栏
 
 | 护栏 | 值 | 证据 |
 |---|---|---|
@@ -479,36 +375,13 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 
 ---
 
-## 8. 推文标签如何升级为账号标签：两套独立机制
+## 7. 推文标签如何升级为账号标签：两套独立机制
 
-### 8.1 NSFW 专用：HLL 计数 + 疲劳（botmaker 侧）
+### 7.1 NSFW 专用：HLL 计数 + 疲劳（botmaker 侧）
 
-`botmaker-rules/scarecrow/derived-feature/ApplyNsfwUserLabel.df`（54 行）是**唯一可见的"推文标签累积 → 账号标签"完整实现**：
+`botmaker-rules/scarecrow/derived-feature/ApplyNsfwUserLabel.df`（54 行）是**唯一可见的"推文标签累积 → 账号标签"完整实现**：`:3` 命名空间 `"NsfwUser"`；`:5-13` 三个 HLL topic `NSFWNearPerfectImagePosted` / `NSFWHighPrecisionImagePosted` / `NSFWHighRecallImagePosted`；`:15-17` **`:hllPrecision = 60`（秒）、`:hllTtl = 26`（小时）**，注释原文「one day + 2 hours (should match lookback sec in GetHLLCountFromDataCenters)」。核心阈值 `:30-38` 是 `GetHLLCountFromDataCenters(:nsfwUserHllNamespace, :hllTopic, ToString(:userId), OneDayInSecs, :hllPrecision, 0, :hllSlice) > 2`。**→ 24 小时内跨机房去重计数 > 2，即 ≥ 3 条 NSFW 推文，才升级为账号标签**，命中记 `MoreThan2InADay` 统计（`:40`）。`:41-44` **每用户每标签每天只处置一次**：疲劳命名空间 `Concat("Fatigue", RULE_ID, :label)`，`SetLabelWithTtl(..., "TRUE", DayInSecs)`；`:45` 才调 `ApplyNsfwUserLabelOrCreateReport`。
 
-- `:3` 命名空间 `"NsfwUser"`；`:5-13` 三个 HLL topic：`NSFWNearPerfectImagePosted` / `NSFWHighPrecisionImagePosted` / `NSFWHighRecallImagePosted`
-- `:15-17` **`:hllPrecision = 60`（秒）、`:hllTtl = 26`（小时）**，注释原文「one day + 2 hours (should match lookback sec in GetHLLCountFromDataCenters)」
-- **核心阈值 `:30-38`**：
-
-```
-      GetHLLCountFromDataCenters(
-        :nsfwUserHllNamespace,
-        :hllTopic,
-        ToString(:userId),
-        OneDayInSecs,
-        :hllPrecision,
-        0,
-        :hllSlice
-      ) > 2
-```
-
-**→ 24 小时内跨机房去重计数 > 2，即 ≥ 3 条 NSFW 推文，才升级为账号标签。** 命中记 `MoreThan2InADay` 统计（`:40`）。
-
-- `:41-44` **每用户每标签每天只处置一次**：疲劳命名空间 `Concat("Fatigue", RULE_ID, :label)`，`SetLabelWithTtl(..., "TRUE", DayInSecs)`
-- `:45` 才调 `ApplyNsfwUserLabelOrCreateReport`
-
-### 8.2 四分支策略：打标 vs 转人工
-
-`ApplyNsfwUserLabelOrCreateReport.df`（93 行）：
+### 7.2 四分支策略：打标 vs 转人工（`ApplyNsfwUserLabelOrCreateReport.df`，93 行）
 
 | 分支 | 条件 | 结果 | 行号 |
 |---|---|---|---|
@@ -522,23 +395,11 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 | ⑤ 高信誉但未被上面拦住 | 且 `!GetUser(:userId).safety.nsfw_admin` | `SetUserLabel(..., CurrentTimeMs() + OneDayInSecs * 3 * 1000)` = **3 天** | `:65-72` |
 | ⑥ NSFW 管理员 | `safety.nsfw_admin == true` | **完全跳过** | `:73-81` |
 
-**两条差别待遇是明写的：高信誉账号 NSFW 标签只关 3 天、普通账号关 7 天（`:64` vs `:72`）；90 天内被人工撤过标的账号，之后只走上报分支、不自动打标。** 后者是申诉成功后的长期保护，比第 9 节的 hold 更久。
+**两条差别待遇是明写的：高信誉账号 NSFW 标签只关 3 天、普通账号关 7 天（`:64` vs `:72`）；90 天内被人工撤过标的账号，之后只走上报分支、不自动打标。** 后者是申诉成功后的长期保护，比第 8 节的 hold 更久。
 
-### 8.3 通用聚合：Strato 流处理，**绝对条数，不是比例**
+### 7.3 通用聚合：Strato 流处理，**绝对条数，不是比例**
 
-`safety-label-user-agg/postToUserLabelRules.strato`（459 行）。条件结构 `:11-17` `PostLabelCountCondition{windowSize, minimumMatchingPosts, maxPostAgeDays, mediaOnly, postLabels}`；规则结构 `:34-43` `UserLabelRule{id, enabled, triggerPostLabels, maxTriggerPostAgeDays, condition, applyUserLabel, userLabelTtlDays, exclusions}`；标签选择器支持 `anyOf`/`allOf` 的 DNF 组合（`:6-9,19-25`）。
-
-判定逻辑（`:266-284`）：
-
-```
-    .take(condition.windowSize)
-    ...
-    .size >= condition.minimumMatchingPosts
-```
-
-**取该作者最近 `windowSize` 条推文，数其中"够新且命中标签"的条数，≥ `minimumMatchingPosts` 就升级。是绝对计数，不是百分比——不存在"30% 推文被标记就封号"这种规则。** `isRecentPost` 用 Snowflake 时间戳判定（`:77-80`），标签名归一化去掉 `_` 并转小写（`:82-88`）。`mediaOnly` 时扫描量放大 4 倍（`:161-174`，`mediaOnlyScanMultiplier = 4`）。多规则命中同标签时**取最大 TTL**（`:294-319`）。
-
-配置护栏（`:96-107`，校验在 `:199-204,229-233,241`）：
+`safety-label-user-agg/postToUserLabelRules.strato`（459 行）。条件结构 `:11-17` `PostLabelCountCondition{windowSize, minimumMatchingPosts, maxPostAgeDays, mediaOnly, postLabels}`；规则结构 `:34-43` `UserLabelRule{id, enabled, triggerPostLabels, maxTriggerPostAgeDays, condition, applyUserLabel, userLabelTtlDays, exclusions}`；标签选择器支持 `anyOf`/`allOf` 的 DNF 组合（`:6-9,19-25`）。判定逻辑（`:266-284`）核心是 `.take(condition.windowSize)` … `.size >= condition.minimumMatchingPosts`。**取该作者最近 `windowSize` 条推文，数其中"够新且命中标签"的条数，≥ `minimumMatchingPosts` 就升级。是绝对计数，不是百分比——不存在"30% 推文被标记就封号"这种规则。** `isRecentPost` 用 Snowflake 时间戳判定（`:77-80`），标签名归一化去掉 `_` 并转小写（`:82-88`）。`mediaOnly` 时扫描量放大 4 倍（`:161-174`，`mediaOnlyScanMultiplier = 4`）。多规则命中同标签时**取最大 TTL**（`:294-319`）。配置护栏（`:96-107`，校验在 `:199-204,229-233,241`）：
 
 | 护栏 | 值 |
 |---|---|
@@ -550,9 +411,7 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 | `maxConfiguredPostAgeDays` | **60** |
 | `maxConfiguredUserLabelTtlDays` | **7** |
 
-**即：这套通用聚合器目前只能产出 NSFW 相关账号标签，窗口最长看最近 10 条推文，账号标签最长 7 天。它不是通用的"spam 推文累积封号"引擎。**
-
-出厂默认规则（`:360-428` `defaultRulesJson`）：
+**即：这套通用聚合器目前只能产出 NSFW 相关账号标签，窗口最长看最近 10 条推文，账号标签最长 7 天。它不是通用的"spam 推文累积封号"引擎。** 出厂默认规则（`:360-428` `defaultRulesJson`）：
 
 | id | triggerPostLabels | windowSize / minimumMatchingPosts | maxPostAgeDays | applyUserLabel | userLabelTtlDays | exclusions |
 |---|---|---|---|---|---|---|
@@ -565,19 +424,9 @@ fn read_meets(reads: u32, humans: u32, floor: f64) -> bool {
 
 ---
 
-## 9. 申诉成功后的豁免期：**天数不可知**
+## 8. 申诉成功后的豁免期：**天数不可知**
 
-### 9.1 机制
-
-`abuse-enforcement-service/service-lib/src/overturn_hold.rs:1-4` 模块原文：
-
-> 「Overturn-hold gate: the last precheck before a suspend (or a gated label) is dispatched. It exists so we do not re-apply an enforcement that a human reviewer already overturned on appeal.」
-
-调用点 `service-lib/src/lib.rs:794-840`（`gated_actions`、`strip_held_labels`、skip 状态）。
-
-### 9.2 时长完全由 DB 决定，仓库里没有天数
-
-`abuse-ledger-service/src/sql.rs:3-7` 原文：
+`abuse-enforcement-service/service-lib/src/overturn_hold.rs:1-4` 模块原文：「Overturn-hold gate: the last precheck before a suspend (or a gated label) is dispatched. It exists so we do not re-apply an enforcement that a human reviewer already overturned on appeal.」调用点 `service-lib/src/lib.rs:794-840`（`gated_actions`、`strip_held_labels`、skip 状态）。时长完全由 DB 决定，`abuse-ledger-service/src/sql.rs:3-7` 原文：
 
 ```sql
 SELECT user_id, hold_id, head, expires_at, case_group_id, reason, action_kind, label
@@ -586,17 +435,9 @@ WHERE user_id = ANY($1::bigint[]) AND cleared_at IS NULL AND expires_at > now()
 AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[])))
 ```
 
-**时长完全由 `expires_at` 决定，该字段由外部申诉系统写入。** 佐证：
+**时长完全由 `expires_at` 决定，该字段由外部申诉系统写入。** 佐证：`abuse-ledger-service/src/sql.rs:53-60` 单测断言本服务**不含任何 INSERT/UPDATE/DELETE/ALTER/DROP/CREATE**（纯只读服务）；`abuse-ledger-service/src/repo.rs:36-51` `HoldRepo` trait 只有 `lookup` / `contract_check` / `ping`（+ 状态查询）；`README.md:335`「when an enforcement is overturned on appeal, `abuse-enforcement-service` does not re-apply that action for a fixed period, **set per appeal queue**.」**结论：豁免期按申诉队列配置，不是全局常量，具体天数不可见。任何"申诉成功后 X 天不被限流"的说法都无法从本仓库证实。** 可证实的只有：豁免期内该动作被完全跳过。`reason` 取值可见 `"appeal_overturned"`（`service-lib/src/ledger_contract_fixtures.rs:14`、`overturn_hold.rs:2178`）与 `"manual"`（`overturn_hold.rs:418`）。
 
-- `abuse-ledger-service/src/sql.rs:53-60` 单测断言本服务**不含任何 INSERT/UPDATE/DELETE/ALTER/DROP/CREATE**——纯只读服务。
-- `abuse-ledger-service/src/repo.rs:36-51` `HoldRepo` trait 只有 `lookup` / `contract_check` / `ping`（+ 状态查询）。
-- `README.md:335` 原文：「when an enforcement is overturned on appeal, `abuse-enforcement-service` does not re-apply that action for a fixed period, **set per appeal queue**.」
-
-**结论：豁免期按申诉队列配置，不是全局常量，具体天数不可见。任何"申诉成功后 X 天不被限流"的说法都无法从本仓库证实。** 可证实的只有：豁免期内该动作被完全跳过。`reason` 取值可见 `"appeal_overturned"`（`service-lib/src/ledger_contract_fixtures.rs:14`、`overturn_hold.rs:2178`）与 `"manual"`（`overturn_hold.rs:418`）。
-
-### 9.3 闸门配置（全部硬数字）
-
-`overturn_hold.rs:19-47`：`CONFIG_KEY = "overturn_hold_gate"`、`LOOKUP_PATH = "/v1/holds/lookup"`、`STATUS_HOLD_OVERTURNED = "hold_overturned"`、`STATUS_HOLD_LOOKUP_FAILED = "hold_lookup_failed"`、`CONNECT_TIMEOUT = 200ms`、`MAX_BODY_BYTES = 64KiB`、**`DEFAULT_TIMEOUT_MS = 200`**、**`DEFAULT_POSITIVE_CACHE_SECS = 60`**、`MIN/MAX_TIMEOUT_MS = 10/5000`、`MAX_POSITIVE_CACHE_SECS = 3600`、**`BREAKER_FAILURES = 5`**、**`DEFAULT_BREAKER_OPEN = 10s`**、`CACHE_MAX_WEIGHT = 100_000`。
+闸门配置（`overturn_hold.rs:19-47`）：`CONFIG_KEY = "overturn_hold_gate"`、`LOOKUP_PATH = "/v1/holds/lookup"`、`STATUS_HOLD_OVERTURNED = "hold_overturned"`、`STATUS_HOLD_LOOKUP_FAILED = "hold_lookup_failed"`、`CONNECT_TIMEOUT = 200ms`、`MAX_BODY_BYTES = 64KiB`、**`DEFAULT_TIMEOUT_MS = 200`**、**`DEFAULT_POSITIVE_CACHE_SECS = 60`**、`MIN/MAX_TIMEOUT_MS = 10/5000`、`MAX_POSITIVE_CACHE_SECS = 3600`、**`BREAKER_FAILURES = 5`**、**`DEFAULT_BREAKER_OPEN = 10s`**、`CACHE_MAX_WEIGHT = 100_000`。
 
 | 项 | 默认值 | 证据 |
 |---|---|---|
@@ -611,13 +452,9 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 
 ---
 
-## 10. 标签到底作用在哪个界面
+## 9. 标签到底作用在哪个界面
 
-**"限流"和"shadow ban"的力度差别，取决于两件事：受众（audience）和挂载的界面（level）。**
-
-- **`NonAuthors`** = 除作者本人外全部丢弃（**粉丝也看不到**）。
-- **`NonFollowers`** = 作者 + 粉丝可见，只丢陌生人。
-- 两者绝不可混用。
+**"限流"和"shadow ban"的力度差别，取决于两件事：受众（audience）和挂载的界面（level）。** `NonAuthors` = 除作者本人外全部丢弃（**粉丝也看不到**）；`NonFollowers` = 作者 + 粉丝可见，只丢陌生人。**两者绝不可混用。** 另外，规则*定义*了受众不等于它*生效*——必须看 `levels.rs` 把规则组挂到了哪些界面。
 
 | 标签 | 层级 | 受众 / 动作 | 规则定义 | 挂载界面 |
 |---|---|---|---|---|
@@ -638,9 +475,7 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 
 ---
 
-## 11. 延迟与 TTL 全表
-
-### 11.1 三种触发模式并存
+## 10. 延迟与 TTL 全表：三种触发模式并存
 
 | 模式 | 载体 | 延迟证据 |
 |---|---|---|
@@ -648,9 +483,7 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 | **批量（BigQuery → BotMaker）** | `bqbm_scheduled_queries`，仅 BBQ 两条规则 | 调度周期在 BigQuery 侧，**不可见**；可见的是每批 10 万条/60 秒闸门（`BBQDuplicateTextProd.bot:38-39`）与 24h 去重（`SetBigQuerytoBotmakerLabel.df:2`） |
 | **流式延迟聚合** | `safety-label-user-agg` Strato forwarder | **`safetyLabelToUserLevelAggregationV2Forwarder.strato:18` `delay = 10.minutes`**；**`:19` `slo = { maxLag = 20.minutes }`**；`:5` topic `vf_tweet_safety_labels_event_prod`；`:7` consumerGroupId `safety-label-user-level-aggregation-v2`；`:15` `forwardEventsFrom = LocalZoneOnly` |
 
-**账号级 NSFW 聚合是"故意延迟 10 分钟、SLO 上限 20 分钟"的批流处理，不是实时。** 这给撤标/申诉留了一个天然缓冲窗口。
-
-### 11.2 读取侧缓存（决定"多久生效 / 多久消失"）
+**账号级 NSFW 聚合是"故意延迟 10 分钟、SLO 上限 20 分钟"的批流处理，不是实时。** 这给撤标/申诉留了一个天然缓冲窗口。读取侧缓存决定"多久生效 / 多久消失"：
 
 | 层 | 参数 | 值 | 证据 |
 |---|---|---|---|
@@ -661,19 +494,10 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 | Dragonfly 写入 TTL | `WRITE_TTL_SECS` | **24 h** | `dragonfly.rs:34` |
 | 命中缓存 TTL | `found_ttl` | **24 h**（switch `rust_vf_safety_label_cache_found_ttl_secs`） | `dragonfly.rs:63,97-98` |
 | **未命中缓存 TTL** | `not_found_ttl` | **1 h**（switch `rust_vf_safety_label_cache_not_found_ttl_secs`） | `dragonfly.rs:64,99-100` |
-| 最小 TTL | `MIN_TTL` | 60 s | `dragonfly.rs:44` |
-| 队列/批量 | `REPEAT_QUEUE` / `FILL_QUEUE_KEYS` / `FILL_BATCH_KEYS` | 500,000 / 10,000 / 100 | `dragonfly.rs:32-44` |
-| 后端超时 | `request_timeout` / `connect_timeout` | **20 ms / 5 s** | `safety-label-source/connect.rs:232,269` |
-| 预热 | `WARM_CHANNEL_CAPACITY` / `WARM_LINGER` / `WARM_FETCH_MAX_KEYS` | 1024 / **500 ms** / 50 | `safety-label-source/warmer.rs:9-11` |
+| 最小 TTL / 队列批量 | `MIN_TTL`；`REPEAT_QUEUE` / `FILL_QUEUE_KEYS` / `FILL_BATCH_KEYS` | 60 s；500,000 / 10,000 / 100 | `dragonfly.rs:32-44` |
+| 后端超时 / 预热 | `request_timeout` / `connect_timeout`；`WARM_CHANNEL_CAPACITY` / `WARM_LINGER` / `WARM_FETCH_MAX_KEYS` | **20 ms / 5 s**；1024 / **500 ms** / 50 | `safety-label-source/connect.rs:232,269`；`warmer.rs:9-11` |
 
-**关键运营结论：两个 TTL 的方向是反的，别记错。** `found_ttl = 24h` 缓存的是「**有**标签」，`not_found_ttl = 1h` 缓存的是「**没有**标签」（`dragonfly.rs:248-253` 的 `is_live` 按 `Status::Found` / `NotFound` 分别取 TTL）。所以：
-
-- **标签被撤掉**（申诉成功）→ 旧的「有标签」条目还在，硬上界 **24h**；
-- **标签被加上** → 旧的「无标签」条目还在，硬上界 **1h**。
-
-但这两个是 **`is_live` 硬过期上界，不是保证延迟**：`due_refresh`（`dragonfly.rs:160-170`）会让 step 0 且年龄 ≥ `REFRESH_AFTER`(60s) 的条目触发**一次**刷新（step→1，不是持续刷新），`refresh_cutoff_ms` 还能强制重填早于 cutoff 的条目。完整的刷新调度/serving 循环未在仓库内，**真实恢复时延无法从本仓库确定**。热键 10 秒 TTL 是热点推文的最快生效路径。
-
-### 11.3 标签 TTL 汇总（全部来自代码原文）
+**关键运营结论：两个 TTL 的方向是反的，别记错。** `found_ttl = 24h` 缓存的是「**有**标签」，`not_found_ttl = 1h` 缓存的是「**没有**标签」（`dragonfly.rs:248-253` 的 `is_live` 按 `Status::Found` / `NotFound` 分别取 TTL）。所以：**标签被撤掉**（申诉成功）→ 旧的「有标签」条目还在，硬上界 **24h**；**标签被加上** → 旧的「无标签」条目还在，硬上界 **1h**。但这两个是 **`is_live` 硬过期上界，不是保证延迟**：`due_refresh`（`dragonfly.rs:160-170`）会让 step 0 且年龄 ≥ `REFRESH_AFTER`(60s) 的条目触发**一次**刷新（step→1，不是持续刷新），`refresh_cutoff_ms` 还能强制重填早于 cutoff 的条目。完整的刷新调度/serving 循环未在仓库内，**真实恢复时延无法从本仓库确定**。热键 10 秒 TTL 是热点推文的最快生效路径。下表为标签 TTL 汇总（全部来自代码原文）：
 
 | 标签 | 层级 | TTL | 证据 |
 |---|---|---|---|
@@ -703,33 +527,21 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 
 ---
 
-## 12. 信誉豁免与新号
+## 11. 信誉豁免与新号
 
-### 12.1 `IsHighPageRankUser`：所有豁免的总开关
+### 11.1 `IsHighPageRankUser`：所有豁免的总开关
 
 `botmaker-rules/scarecrow/derived-feature/IsHighPageRankUser.df:4-18` 关键行：
 
 ```
-    val :userCredScore = TryOrElse(GetUserCredV2(:userId).score, NULL);
-    val :predictedHighPageRank = {
-      val :userLabels = TryOrElse(GetUserLabels(:userId), EmptyStringSet);
-      Contains(:userLabels, "PREDICTED_HIGH_PAGE_RANK")
-    };
     val :pageRankCriteria = Coalesce(:userCredScore, -1) >= HighPageRankThreshold || :predictedHighPageRank;
-    val :followerCountFromGizmoduck = Coalesce(FollowerCountFromGizmoduck(:userId), 0);
     val :fallbackFollowerCountCriteria = :followerCountFromGizmoduck > 25000;
     val :usePageRankCriteria = :userCredScore != NULL || :predictedHighPageRank;
 ```
 
-- **`HighPageRankThreshold.df:2` = `54`**（已验证生产默认值）
-- 判定：`UserCredV2.score >= 54` **或** 带 `PREDICTED_HIGH_PAGE_RANK` 标签；**两者都拿不到时才退化为 `followers > 25000`**
-- 结果用 `CacheGet` 缓存（`:3`）
+`:predictedHighPageRank` 来自 `Contains(GetUserLabels(:userId), "PREDICTED_HIGH_PAGE_RANK")`（`:12`），`:14` 决定是否走 fallback。**`HighPageRankThreshold.df:2` = `54`**（已验证生产默认值）。判定：`UserCredV2.score >= 54` **或** 带 `PREDICTED_HIGH_PAGE_RANK` 标签；**两者都拿不到时才退化为 `followers > 25000`**；结果用 `CacheGet` 缓存（`:3`）。分数来源 `user-cred-v2/UserCredV2.scala:10-18`：`ScoreSlope = 7.07`、`ScoreIntercept = 165.2`，**`rawScore = 165.2 + 7.07 * ln(mass)`**（mass ≤ 0 时为 0），`score = clamp(rawScore, 0, 100)`。反解 score ≥ 54 需 `ln(mass) >= (54-165.2)/7.07 = -15.73`，即 mass ≥ 1.48e-7——**这是个极低的 PageRank 质量门槛，说明"高信誉"判定主要靠 `PREDICTED_HIGH_PAGE_RANK` 标签，而非纯分数**。其他豁免身份：`IsUserGrayVerified.df:4-7` = `ToLower(GetUser(:userId).safety.verified_type) == "government"`（**灰 V = 政府**）；`IsUserGoldVerified.df:4-7` = `== "business"`（**金 V = 企业**）；`FollowerCountFromGizmoduck.df:4` = `GetUser(:userId).counts.followers`。
 
-分数来源 `user-cred-v2/UserCredV2.scala:10-18`：`ScoreSlope = 7.07`、`ScoreIntercept = 165.2`，**`rawScore = 165.2 + 7.07 * ln(mass)`**（mass ≤ 0 时为 0），`score = clamp(rawScore, 0, 100)`。反解 score ≥ 54 需 `ln(mass) >= (54-165.2)/7.07 = -15.73`，即 mass ≥ 1.48e-7——**这是个极低的 PageRank 质量门槛，说明"高信誉"判定主要靠 `PREDICTED_HIGH_PAGE_RANK` 标签，而非纯分数**。
-
-其他豁免身份：`IsUserGrayVerified.df:4-7` = `ToLower(GetUser(:userId).safety.verified_type) == "government"`（**灰 V = 政府**）；`IsUserGoldVerified.df:4-7` = `== "business"`（**金 V = 企业**）。`FollowerCountFromGizmoduck.df:4` = `GetUser(:userId).counts.followers`。
-
-### 12.2 每条规则都有的四件套豁免
+### 11.2 每条规则都有的四件套豁免
 
 20 条规则里反复出现的同一组条件（`BBQDuplicateTextProd.bot:30-33`、`ProductionAgatha__FilterOutOrganicNotifications.bot:7,22-24`、`GroxTweetProcessor.bot:9,16-20`、`LQ_...NonFollower.bot:28-31`）：
 
@@ -742,18 +554,9 @@ AND (action_kind = 'suspend' OR (action_kind = 'label' AND label = ANY($2::text[
 
 **反过来读就是普通新号的处境：高信誉账号、政府灰 V、内部测试号、以及一个外部维护的自动过期临时白名单（`AutoExpiringTempSkipList`，经 `scarecrow/function/ListRegistry.scala:14-26` 的 `fetcher20.getSimpleListLongValues` 读取，名单内容不在仓库）里的账号，被系统性排除在这些打标规则之外。普通新号没有这层保护。**
 
-### 12.3 home-mixer 两道"新号"过滤：**代码在，默认关；而且指的是观众**
+### 11.3 home-mixer 两道"新号"过滤：**代码在，默认关；而且指的是观众**
 
-**这两道过滤不能用来解释任何真实的限流问题。** 两个独立原因：
-
-**(a) 开关默认 false。**
-
-| 开关 | 默认值 | 证据 |
-|---|---|---|
-| `EnableNewUserMinEngagementFilter`（`rust_home_mixer_enable_new_user_min_engagement_filter`） | **`false`** | `home-mixer/params/param.rs:937-941` |
-| `EnableNewUserSoftNsfwFilter`（`rust_home_mixer_enable_new_user_soft_nsfw_filter`） | **`false`** | `home-mixer/params/param.rs:967-971` |
-
-**(b) `NewUserMinEngagementFilter` 里的"新号"是观众（`query.user_id`），不是作者。**
+**这两道过滤不能用来解释任何真实的限流问题**，两个独立原因。**(a) 开关默认 false：** `EnableNewUserMinEngagementFilter`（`rust_home_mixer_enable_new_user_min_engagement_filter`）= **`false`**（`home-mixer/params/param.rs:937-941`）；`EnableNewUserSoftNsfwFilter`（`rust_home_mixer_enable_new_user_soft_nsfw_filter`）= **`false`**（`param.rs:967-971`）。**(b) `NewUserMinEngagementFilter` 里的"新号"是观众（`query.user_id`），不是作者：**
 
 ```rust
 // home-mixer/filters/new_user_min_engagement_filter.rs:70-77
@@ -765,31 +568,24 @@ fn within_account_age(query: &ScoredPostsQuery) -> bool {
 }
 ```
 
-**即使打开，它限制的也是"一个刚注册的观众能看到多少陌生人的内容"，不是"一个新作者能被分发多少"。** OON-only 的作用范围是真的：`should_keep` 在 `candidate.in_network != Some(false)` 时直接返回 true（`new_user_min_engagement_filter.rs:60-63`）。
-
-阈值本身是真实默认值，但**因为开关关着，全部不生效**：
+**即使打开，它限制的也是"一个刚注册的观众能看到多少陌生人的内容"，不是"一个新作者能被分发多少"。** OON-only 的作用范围是真的：`should_keep` 在 `candidate.in_network != Some(false)` 时直接返回 true（`new_user_min_engagement_filter.rs:60-63`）。阈值本身是真实默认值，但**因为开关关着，全部不生效**：
 
 | 参数 | 默认值 | 状态 | 证据 |
 |---|---|---|---|
-| `NewUserMinEngagementFilterMetric` | `"fav"` | 代码在，默认关 | `param.rs:946` |
-| `NewUserMinEngagementFilterUseRatio` | `true`（除以曝光） | 同上 | `param.rs:952`（switch 名 `:951`） |
+| `NewUserMinEngagementFilterMetric` / `NewUserMinEngagementFilterUseRatio` | `"fav"` / `true`（除以曝光） | 代码在，默认关 | `param.rs:946`、`:952`（switch 名 `:951`） |
 | `NewUserMinEngagementThreshold` | `0.004` | 同上 | `param.rs:955-958` |
-| `NewUserMinEngagementFilterMaxAccountAgeSecs` | `1800`（30 分钟） | 同上 | `param.rs:961-964` |
-| `NewUserMinEngagementFilterMaxResurrectionAgeSecs` | `1800` | 同上 | `param.rs:985-988` |
-| `NewUserSoftNsfwFilterMaxAccountAgeSecs` | `604800`（7 天） | 同上 | `param.rs:973-976` |
-| `NewUserSoftNsfwFilterMaxScoringSeqLength` | `100` | 同上 | `param.rs:979-982` |
+| `NewUserMinEngagementFilterMaxAccountAgeSecs` / `NewUserMinEngagementFilterMaxResurrectionAgeSecs` | `1800`（30 分钟）/ `1800` | 同上 | `param.rs:961-964`、`:985-988` |
+| `NewUserSoftNsfwFilterMaxAccountAgeSecs` / `NewUserSoftNsfwFilterMaxScoringSeqLength` | `604800`（7 天）/ `100` | 同上 | `param.rs:973-976`、`:979-982` |
 
-第二道过滤的逻辑（`home-mixer/filters/new_user_soft_nsfw_filter.rs:13-27`）：仅 For You 非话题场景 + 账号年龄 < 7 天 + 打分序列长度 < 100；`:38-40,52` 移除关注外且 `soft_nsfw == true` 的推文。**同样默认关。**
+第二道过滤的逻辑（`home-mixer/filters/new_user_soft_nsfw_filter.rs:13-27`）：仅 For You 非话题场景 + 账号年龄 < 7 天 + 打分序列长度 < 100；`:38-40,52` 移除关注外且 `soft_nsfw == true` 的推文。**同样默认关。** 指标定义供参考：`:92-104` fav/engagement/view，可选除以曝光取比率；`:106-113` engagement = fav + reply + repost + quote。
 
-指标定义供参考：`:92-104` fav/engagement/view，可选除以曝光取比率；`:106-113` engagement = fav + reply + repost + quote。
+### 11.4 `NOT_GRADUATED`
 
-### 12.4 `NOT_GRADUATED`
-
-`visibility-filtering/rules/author_rules.rs:246-251`：`NOT_GRADUATED_USER_LABEL_DROP_UNSPECIFIED`，受众 **NonFollowers**，`AuthorHasLabel(AuthorLabel::NotGraduated)` → `drop_post(DropAs::UnspecifiedReason)`。**生产该标签的规则未公开**（第 1.2 节），**且公开挂载里它只作用于通知面**（第 10 节）。"注册多久算毕业"完全不可见。
+`visibility-filtering/rules/author_rules.rs:246-251`：`NOT_GRADUATED_USER_LABEL_DROP_UNSPECIFIED`，受众 **NonFollowers**，`AuthorHasLabel(AuthorLabel::NotGraduated)` → `drop_post(DropAs::UnspecifiedReason)`。**生产该标签的规则未公开**（第 1.2 节），**且公开挂载里它只作用于通知面**（第 9 节）。"注册多久算毕业"完全不可见。
 
 ---
 
-## 13. 可直接引用的硬结论
+## 12. 可直接引用的硬结论
 
 1. **打标是"模型分 + 硬阈值"，不是模糊综合判断**：Grox `spamScore >= 0.97`（`GroxTweetProcessor.bot:8`）、Agatha `> 0.99 / 0.999 / 0.999`（`ProductionAgatha...bot:18-20`）、NSFW near-perfect `>= 0.999`（`IsNearPerfectNsfwNewModelLogic.df:3`）、血腥图片 `> 0.6` / 视频 `>= 0.95`（`ViolenceAndGore_ImageModel_MTT.bot:10,12`）。
 2. **`MATCHES` 是全串匹配**（`RegexCache.java:71-73`），`".*BAD"` 与 `"BAD"` 是两级不同强度，分别产出 `SPAM_HIGH_RECALL` 与 `SPAM`（`Tweet_Spam_High_Recall...bot:40-46`）。

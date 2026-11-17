@@ -228,11 +228,21 @@ synthetic data generation).
 | 2026-09-18 | Under the Hood adds legal-compliance visibility information | you can see which country withheld a post |
 | 2026-10-08 | ranking model improves time-spent prediction | `phoenix/xrex/models/loss_recsys.py` |
 | 2026-10-13 | retrieval model also trained to surface posts people read all the way through | `recsys_two_tower_model.py` |
-| 2026-10-26 | Brazil election filter removed | the election ended |
+| 2026-10-26 | home-mixer's `Brazil2026ElectionFilter` removed | the election ended; **the VF label rule of the same name remains**, see below |
 | 2026-11-16 | param sync (the numeric baseline for this knowledge base) | |
 
 **The trend is unmistakable: a shift from engagement counts toward attention
 duration / read-through rate.** Both October 2026 updates reinforce duration modeling.
+
+**The Brazil election filter is two layers, not one.** What upstream removed on 10-26 is
+**home-mixer's `Brazil2026ElectionFilter`** (no longer greppable anywhere under
+`home-mixer/` at this commit). But **visibility-filtering's
+`brazil_election_legal/drop/undesirable` is still wired** (`tweet_rules.rs:951-959`, a
+member of `OON_POST_DROPS` at `levels.rs:215-220`), conditioned on
+`TweetHasLabel(BRAZIL_ELECTION_LEGAL) && RequestCountryIs("br")`, audience `NonAuthors`.
+The former is a ranking-side account-list filter; the latter is a visibility-side legal
+label rule. **Removing the former does not disable the latter.**
+See `04-visibility-filtering` §3.4 and §4.
 
 ---
 
