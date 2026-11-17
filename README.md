@@ -51,10 +51,13 @@ overwrite your work.
 
 ### Install
 
-The skill lives at `skills/x-algo-kb/`. Install it by copying or symlinking that directory
-into your agent's skills directory:
+The skill lives at `skills/x-algo-kb/`. Clone this repo, then copy or symlink that
+directory into your agent's skills directory:
 
 ```bash
+git clone https://github.com/youngfreeFJS/x-algo-kb-skill.git
+cd x-algo-kb-skill
+
 # user-level (available in every project)
 ln -s "$(pwd)/skills/x-algo-kb" ~/.qoder/skills/x-algo-kb
 
@@ -210,9 +213,12 @@ bash skills/x-algo-kb/scripts/fetch-source.sh ~/src/x  # 或指定目录
 
 ### 安装
 
-技能本体在 `skills/x-algo-kb/`。复制或软链到你的 agent 技能目录即可：
+技能本体在 `skills/x-algo-kb/`。先 clone 本仓库，再复制或软链到你的 agent 技能目录：
 
 ```bash
+git clone https://github.com/youngfreeFJS/x-algo-kb-skill.git
+cd x-algo-kb-skill
+
 # 用户级（所有项目可用）
 ln -s "$(pwd)/skills/x-algo-kb" ~/.qoder/skills/x-algo-kb
 
