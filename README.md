@@ -74,20 +74,34 @@ use it; the layout is not Qoder-specific.
 Read **only** the file matching your question. Each is self-contained. Pick `zh/` or `en/`
 by language — the content is equivalent, do not read both.
 
-| File | Covers |
-|---|---|
-| `01-architecture` | Two pipelines, 29-module map, version anchor, update timeline, reading traps |
-| `02-scoring-ranking` | Full production weight table, scoring formula, mutual-follow boost, author decay, OON discount, cold start |
-| `03-retrieval-filtering` | Retrieval quotas, 21 pre-scoring filters, post-ranking filters, conversation dedup |
-| `04-visibility-filtering` | Severity fold, ALLOW/NOTICE/INTERSTITIAL/DROP, audience semantics, age gating, legal takedowns |
-| `05-safety-labeling` | botmaker rule language, public rules, enforcement tiers, TTLs, appeal hold |
-| `06-account-credibility` | PageRank credibility, agatha ratios, bdsm behaviour model, NSFW calibration curves |
-| `07-models` | Phoenix architecture, two-tower retrieval, loss functions, DPP reranking, index-time VF |
-| `08-playbook` | Actionable tactics, myth-busting, shadowban self-diagnosis |
+| File | Covers | Size (zh / en chars) |
+|---|---|---|
+| `01-architecture` | Two pipelines, 29-module map, version anchor, update timeline, reading traps | 8k / 14k |
+| `02-scoring-ranking` | Full production weight table, scoring formula, mutual-follow boost, author decay, OON discount, cold start | 10k / 14k |
+| `03-retrieval-filtering` | Retrieval quotas, 21 pre-scoring filters, post-ranking filters, conversation dedup | 8k / 13k |
+| `04-visibility-filtering` | Severity fold, ALLOW/NOTICE/INTERSTITIAL/DROP, audience semantics, age gating, legal takedowns | **50k / 63k** |
+| `05-safety-labeling` | botmaker rule language, public rules, enforcement tiers, TTLs, appeal hold | **50k / 69k** |
+| `06-account-credibility` | PageRank credibility, agatha ratios, bdsm behaviour model, NSFW calibration curves | **39k / 56k** |
+| `07-models` | Phoenix architecture, two-tower retrieval, loss functions, DPP reranking, index-time VF | **37k / 49k** |
+| `08-playbook` | Actionable tactics, myth-busting, shadowban self-diagnosis | 13k / 24k |
 
 Files live at `skills/x-algo-kb/references/{zh,en}/<name>.md`.
 
-### Six traps that cause wrong answers
+`04`–`07` are exhaustive enumerations: loading one whole costs roughly 30–40k tokens in
+Chinese or 13–18k in English. For a narrow question, **grep the file for the identifier
+first** and read only the surrounding section — rule names, `SafetyLabelType` variants,
+param names and feature-switch keys stay in English in both languages, so one pattern
+works for `zh/` and `en/`:
+
+```
+grep -n "DO_NOT_AMPLIFY\|do_not_amplify" skills/x-algo-kb/references/zh/04-visibility-filtering.md
+```
+
+Three of the four end with a condensed section readable on its own: `04` §12 Diagnostic
+quick reference, `05` §12 Hard conclusions, `06` §10 Three-sentence conclusion. `07` has
+no summary. For operational questions start at `08-playbook`, the cheapest entry point.
+
+### Eight traps that cause wrong answers
 
 These are the errors this KB was built to prevent. Each was verified against source.
 
@@ -122,6 +136,19 @@ These are the errors this KB was built to prevent. Each was verified against sou
    reputation-label drop rules attach to `TimelineHomeRecommendations` (thrift 61) while
    `TimelineHome` (thrift 8) has none — or exclusion from the retrieval index. It is not a
    lowered score. Diagnose by reading labels, not scores.
+
+7. **Code present ≠ running in production.** Multiplicative fusion
+   (`MultiplicativeVmEngageBias = 0.0`), page-level RL exploration, the Phoenix MOE
+   retrieval source and inventory holdout are all off by default
+   (`param.rs:189-193,370-374,596-600,1157-1161`). Weight perturbation is a no-op:
+   `WeightPerturbationSigma = 0.0` (`vm-ranker/params.rs:188-192`) and `perturbed`
+   early-returns when sigma ≤ 0 (`xai-value-model/weights.rs:145-148`).
+
+8. **A README "removed X" entry names one component in one module.** The Brazil election
+   filter is two layers: home-mixer's filter is gone (zero `brazil` matches in that
+   module), but visibility-filtering's `brazil_election_legal/drop/undesirable` is still
+   wired under `RequestCountryIs("br")` (`tweet_rules.rs:951-959`). Check for a same-named
+   rule in other modules before repeating a removal as a global fact.
 
 ### Answering discipline
 
@@ -204,20 +231,31 @@ description 里带中英双语触发词（`限流`、`降权`、`推流`、`权�
 
 **只读**与问题对应的那一篇，每篇自包含。按语言选 `zh/` 或 `en/`，内容对等，不要两版都读。
 
-| 文件 | 覆盖 |
-|---|---|
-| `01-architecture` | 两条流水线、29 模块地图、版本锚点、更新时间线、易踩坑 |
-| `02-scoring-ranking` | 完整生产权重表、加权公式、互关加成、作者衰减、OON 折扣、冷启动 |
-| `03-retrieval-filtering` | 召回配额、21 道打分前过滤、排序后过滤、会话去重 |
-| `04-visibility-filtering` | severity fold、ALLOW/NOTICE/INTERSTITIAL/DROP、audience 语义、年龄门禁、法律下架 |
-| `05-safety-labeling` | botmaker 规则语言、公开规则、处置档位、TTL、申诉豁免 |
-| `06-account-credibility` | PageRank 信誉、agatha 比值、bdsm 行为模型、NSFW 校准曲线 |
-| `07-models` | Phoenix 架构、双塔召回、损失函数、DPP 重排、索引前置风控 |
-| `08-playbook` | 可执行打法、误解纠正、限流自查 |
+| 文件 | 覆盖 | 体量 zh/en 字符 |
+|---|---|---|
+| `01-architecture` | 两条流水线、29 模块地图、版本锚点、更新时间线、易踩坑 | 8k / 14k |
+| `02-scoring-ranking` | 完整生产权重表、加权公式、互关加成、作者衰减、OON 折扣、冷启动 | 10k / 14k |
+| `03-retrieval-filtering` | 召回配额、21 道打分前过滤、排序后过滤、会话去重 | 8k / 13k |
+| `04-visibility-filtering` | severity fold、ALLOW/NOTICE/INTERSTITIAL/DROP、audience 语义、年龄门禁、法律下架 | **50k / 63k** |
+| `05-safety-labeling` | botmaker 规则语言、公开规则、处置档位、TTL、申诉豁免 | **50k / 69k** |
+| `06-account-credibility` | PageRank 信誉、agatha 比值、bdsm 行为模型、NSFW 校准曲线 | **39k / 56k** |
+| `07-models` | Phoenix 架构、双塔召回、损失函数、DPP 重排、索引前置风控 | **37k / 49k** |
+| `08-playbook` | 可执行打法、误解纠正、限流自查 | 13k / 24k |
 
 路径：`skills/x-algo-kb/references/{zh,en}/<name>.md`。
 
-### 六个最容易答错的点
+`04`–`07` 是穷举式清单：整篇读一次中文约 30–40k token、英文约 13–18k。
+窄问题**先 grep 标识符**，只读命中处上下文——规则名、`SafetyLabelType` 变体、param 名、
+feature switch key 在两版里都保留英文，一个 pattern 通吃 `zh/` 和 `en/`：
+
+```
+grep -n "DO_NOT_AMPLIFY\|do_not_amplify" skills/x-algo-kb/references/zh/04-visibility-filtering.md
+```
+
+四篇里有三篇收尾带可单独读的浓缩节：`04` §12 诊断速查、`05` §12 可直接引用的硬结论、
+`06` §10 三句话结论。`07` 没有浓缩节。运营类问题从 `08-playbook` 进，最便宜。
+
+### 八个最容易答错的点
 
 以下每条都经过源码实证，是本知识库要防的主要错误。
 
@@ -249,6 +287,17 @@ description 里带中英双语触发词（`限流`、`降权`、`推流`、`权�
    「限流」通常是**推荐资格被布尔剥夺**——信誉标签 drop 规则挂在
    `TimelineHomeRecommendations`（thrift 61），而 `TimelineHome`（thrift 8）没有这类规则——
    或者根本没进召回索引。**不是分数被调低。** 诊断要查标签，不是查分数。
+
+7. **代码存在 ≠ 生产在跑。** 乘法融合（`MultiplicativeVmEngageBias = 0.0`）、
+   页面级 RL 探索、Phoenix MOE 召回源、库存 holdout 默认全关
+   （`param.rs:189-193,370-374,596-600,1157-1161`）。权重扰动是空操作：
+   `WeightPerturbationSigma = 0.0`（`vm-ranker/params.rs:188-192`），
+   且 `perturbed` 在 sigma ≤ 0 时直接返回（`xai-value-model/weights.rs:145-148`）。
+
+8. **README 里「移除了 X」只指一个模块里的一个组件。** 巴西选举过滤器是两层：
+   home-mixer 那份已删（该模块 `brazil` 零命中），但 visibility-filtering 的
+   `brazil_election_legal/drop/undesirable` 仍挂在 `RequestCountryIs("br")` 下
+   （`tweet_rules.rs:951-959`）。把「移除」当全局事实转述前，先查其他模块有没有同名规则。
 
 ### 回答纪律
 

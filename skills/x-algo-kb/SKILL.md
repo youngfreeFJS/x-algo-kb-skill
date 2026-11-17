@@ -97,8 +97,11 @@ and `05-safety-labeling`.
    are both `false` (`param.rs:937-941,967-971`); the age check uses `query.user_id`
    (`new_user_min_engagement_filter.rs:70-77`). They are not a gate on new authors —
    a new account's real treatment is the cold-start **boost**.
-5. **Many capabilities are off by default** — multiplicative fusion, weight
-   perturbation, page-level RL exploration, MOE/SID retrieval, inventory holdout.
+5. **Many capabilities are off by default** — multiplicative fusion
+   (`MultiplicativeVmEngageBias = 0.0`), page-level RL exploration, MOE and SID retrieval
+   sources, inventory holdout (`param.rs:189-193,370-374,596-600,845-849,1157-1161`), and
+   weight perturbation (`WeightPerturbationSigma = 0.0`, `vm-ranker/params.rs:188-192`;
+   `perturbed` early-returns at sigma ≤ 0, `xai-value-model/weights.rs:145-148`).
    Code present ≠ running in production.
 6. **Ranking and visibility are separate systems.** "Shadowban" is usually a
    visibility verdict or exclusion from the retrieval index, not a lowered score.
