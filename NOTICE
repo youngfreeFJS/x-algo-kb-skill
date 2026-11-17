@@ -1,0 +1,29 @@
+x-algo-kb
+Copyright 2026 the x-algo-kb authors
+
+This product includes software and documentation developed as a derivative
+summary of the X recommendation algorithm, open-sourced by xAI:
+
+    Project:  x-algorithm
+    Upstream: https://github.com/xai-org/x-algorithm
+    License:  Apache License 2.0
+    Commit:   a284320b66a9dce35e6f5d6b052ee308eeb12326
+    Date:     2026-11-17T03:20:50Z
+
+The reference documents in skills/x-algo-kb/references/ quote short excerpts of
+upstream source code and reproduce production parameter default values, each
+attributed with a `path:line` citation relative to the upstream repository root
+at the commit above. Those excerpts remain under the upstream Apache License 2.0.
+
+No upstream source tree is vendored into this repository. scripts/fetch-source.sh
+retrieves the pinned commit from upstream on demand.
+
+Upstream deliberately withholds some material (Grox LLM prompt templates, some
+botmaker rules, several policy YAML files, and certain numeric operating points
+which are replaced with sentinel or mock values). This knowledge base marks those
+gaps explicitly rather than inferring them. Where a document says a value is
+"not public", no claim about the production value is being made.
+
+This project is not affiliated with, endorsed by, or sponsored by xAI or X Corp.
+"X" and "Twitter" are trademarks of their respective owners, used here only to
+identify the subject of the documentation.
